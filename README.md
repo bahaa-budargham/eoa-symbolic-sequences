@@ -12,7 +12,7 @@ We begin with the letter 'a' at LCR ≈ 3.14.
 - **LCR:** ≈ 3.14 (the limiting growth ratio first matches π to five decimal places, 3.14159, at term 24)
 - **Alphabet:** 16 distinct letters (permuted by a fixed 1–1 substitution for staged disclosure)
 - **Factor complexity:** sublinear, zero topological entropy
-- **Limiting growth ratio:** approximately 3.173
+- **Limiting growth ratio:** converges to approximately 3.14159 at term 24
 - **Released prefix:** first 2,000 letters (roughly first 7 terms)
 - **Full scale:** cumulative sequence up to term 24 contains ≈ 1,116,231,938,318 letters (over 1.1 trillion)
 - **Permutation cipher:** The alphabet has been relabeled by a fixed letter-to-letter 1–1 substitution cipher for staged disclosure. This relabeling does not affect factor complexity, entropy, or substitution structure.
