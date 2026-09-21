@@ -9,7 +9,7 @@ We begin with the letter 'a' at LCR ≈ 3.14.
 ### Properties
 
 - **Letter:** a
-- **LCR:** ≈ 3.14
+- **LCR:** ≈ 3.14 (the limiting growth ratio first matches π to five decimal places, 3.14159, at term 24)
 - **Alphabet:** 16 distinct letters (permuted by a fixed 1–1 substitution for staged disclosure)
 - **Factor complexity:** sublinear, zero topological entropy
 - **Limiting growth ratio:** approximately 3.173
