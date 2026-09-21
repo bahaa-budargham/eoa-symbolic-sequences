@@ -57,8 +57,12 @@ The original mapping and the full operator are withheld under the EOA staged dis
 
 We welcome collaboration from symbolic dynamicists, combinatorists on words, and researchers in formal languages and automata theory.
 
-Contact: Bahaa Budargham, [your email]
+Contact: Bahaa Budargham, bdarghamneurolabs@gmail.com
 
 ## License
 
 This dataset is released under the Creative Commons Attribution 4.0 International License (CC BY 4.0). See `LICENSE` for details.
+
+## DOI
+
+https://doi.org/10.5281/zenodo.22882603
