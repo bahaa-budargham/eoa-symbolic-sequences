@@ -1,1 +1,2791 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Symbolic Sequence Visualizer — EOA v4.1</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+body{font-family:'Inter',sans-serif;background:#090d16;color:#f8fafc;overflow-x:hidden}
+.code-font{font-family:'Fira Code',monospace}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#0f172a}
+::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#06b6d4}
+.glass-card{background:rgba(15,23,42,.75);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);transition:border-color .2s,box-shadow .2s}
+.glass-card:hover{border-color:rgba(6,182,212,.3);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+input[type=range]{-webkit-appearance:none;background:#1e293b;border-radius:6px;height:6px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:#06b6d4;cursor:pointer;box-shadow:0 0 10px rgba(6,182,212,.5);transition:transform .1s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+input[type=range].accent-amber-500::-webkit-slider-thumb{background:#fbbf24;box-shadow:0 0 10px rgba(251,191,36,.5)}
+input[type=range].accent-fuchsia-500::-webkit-slider-thumb{background:#e879f9;box-shadow:0 0 10px rgba(232,121,249,.5)}
+input[type=range].accent-emerald-500::-webkit-slider-thumb{background:#34d399;box-shadow:0 0 10px rgba(52,211,153,.5)}
+.tier-observed{border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.05)}
+.tier-estimated{border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.05)}
+.tier-hypothesis{border-color:rgba(148,163,184,.25);background:rgba(30,41,59,.4)}
+details.disclosure summary{list-style:none}
+details.disclosure summary::-webkit-details-marker{display:none}
+details.disclosure[open] summary i.fa-chevron-down{transform:rotate(180deg)}
+details.disclosure summary i.fa-chevron-down{transition:transform .15s ease}
+@media print {
+    header, .no-print, button, select, input, textarea,
+    #exportProofBtn, #resetViewTurtle, #exportTurtle,
+    #exportCGR, #exportRecurrence, #exportRauzy, #exportRauzyGraph,
+    #exportComplexity, #exportAbelian, #exportEntropy, #exportBalance,
+    #exportSurrogate {
+        display: none !important;
+    }
+    body { background: #ffffff !important; color: #111 !important; }
+    .glass-card {
+        background: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+    }
+    .glass-card:hover { border-color: #cccccc !important; box-shadow: none !important; }
+    canvas { border: 1px solid #cccccc !important; }
+    .text-slate-200, .text-slate-300, .text-slate-400,
+    .text-slate-500, .text-white, .text-slate-100 {
+        color: #111 !important;
+    }
+    .bg-slate-950, .bg-slate-900, .bg-slate-950\/80,
+    .bg-slate-900\/80, .bg-slate-900\/85, .bg-slate-900\/90 {
+        background: #ffffff !important;
+    }
+    main { padding: 0 !important; }
+    section { break-inside: avoid; }
+    .glass-card { break-inside: avoid; }
+}
+</style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+<header class="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur sticky top-0 z-50">
+<div class="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap justify-between items-center gap-4">
+<div class="flex items-center space-x-3">
+<div class="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-400">
+<i class="fa-solid fa-square-poll-vertical text-xl"></i>
+</div>
+<div>
+<h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+Symbolic Sequence Visualizer
+<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">EOA v4.1</span>
+</h1>
+<p class="text-xs text-slate-400 font-medium">
+<span class="text-slate-200 font-semibold">Bahaa BuDargham</span>
+</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button id="presetSierpinski" class="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">Sierpinski</button>
+<button id="presetTerdragon" class="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">Terdragon</button>
+<button id="presetDragon" class="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">Dragon</button>
+<button id="exportProofBtn" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 transition flex items-center gap-1.5">
+    <i class="fa-solid fa-file-shield"></i> Export Report
+</button>
+<a href="https://research.neurolabs.space" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 transition flex items-center gap-1.5 ml-2">
+<i class="fa-solid fa-globe text-cyan-400"></i> research.neurolabs.space
+</a>
+</div>
+</div>
+</header>
+
+<main class="flex-grow max-w-[1700px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5">
+
+<!-- Controls & Metrics -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+<!-- Symbolic Sequence card (with disclosure inside) -->
+<div class="lg:col-span-6 glass-card rounded-2xl p-4 flex flex-col justify-between space-y-3">
+<div class="flex flex-wrap justify-between items-center gap-2">
+<label for="sequenceInput" class="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+<i class="fa-solid fa-terminal text-cyan-400"></i> Symbolic Sequence
+</label>
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-1">
+<span class="text-[10px] text-slate-400 font-medium">letter</span>
+<input id="metaLetter" type="text" value="a" maxlength="12"
+    class="w-14 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-[11px] code-font text-cyan-300 text-center focus:outline-none focus:border-cyan-500"
+    placeholder="a">
+</div>
+<div class="flex items-center gap-1">
+<span class="text-[10px] text-slate-400 font-medium">LCR</span>
+<input id="metaLCR" type="text" value="3.14" maxlength="12"
+    class="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-[11px] code-font text-cyan-300 text-center focus:outline-none focus:border-cyan-500"
+    placeholder="3.14">
+</div>
+<button id="clearBtn" class="text-[11px] font-medium px-2 py-1 rounded bg-slate-800 hover:bg-rose-900/40 text-rose-300 border border-slate-700 transition">Clear</button>
+</div>
+</div>
+
+<!-- Input & Operator Disclosure -->
+<details class="disclosure rounded-lg border border-slate-700/60 bg-slate-950/60 p-2">
+<summary class="text-[10px] font-semibold text-slate-300 cursor-pointer hover:text-cyan-300 transition flex items-center gap-1.5 select-none">
+<i class="fa-solid fa-circle-info text-cyan-400 text-[10px]"></i>
+<span>Input &amp; Operator Disclosure</span>
+<i class="fa-solid fa-chevron-down ml-auto text-slate-500 text-[9px]"></i>
+</summary>
+<div class="mt-2 text-[9px] text-slate-400 leading-relaxed space-y-1.5">
+<p class="text-slate-500 italic">The terms below (<em>EOA</em>, <em>LCR</em>, <em>β-operator</em>) are specific to this project and are not standard in symbolic dynamics.</p>
+<p><strong class="text-slate-300">Input:</strong> spoken English letter name. Exact EOA phonetic encoding disclosed under collaboration access (not reproduced in the public artifact).</p>
+<p><strong class="text-slate-300">LCR:</strong> limiting-ratio control parameter of the EOA construction. Currently set to <span id="disclosureLCR" class="text-cyan-300 code-font">3.14</span>. Formal mathematical definition is part of the EOA technical documentation, available to qualified collaborators under the stated agreement.</p>
+<p><strong class="text-slate-300">β-operator:</strong> generates the released sequence. Transformation rules and implementation available to qualified researchers under a signed collaboration agreement.</p>
+<p class="text-slate-500 italic pt-1 border-t border-slate-800">Full disclosure is included in the exported report.</p>
+<p class="pt-1 border-t border-slate-800">
+  <strong class="text-amber-300">Placeholder notice:</strong> the built-in sample sequence is a motif placeholder for UI demonstration. It is <em>not</em> generated by the β-operator. Paste a released EOA sequence to analyse a real one.
+</p>
+<p class="pt-1 border-t border-slate-800">
+  <strong class="text-slate-300">Access:</strong> the β-operator and the exact phonetic encoding are available on request via
+  <a href="https://research.neurolabs.space" target="_blank" rel="noopener noreferrer"
+     class="text-cyan-300 hover:text-cyan-200 underline underline-offset-2">
+    research.neurolabs.space
+  </a>.
+</p>
+</div>
+</details>
+
+<textarea id="sequenceInput" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs code-font text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition resize-y" placeholder="Paste symbolic sequence..."></textarea>
+
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-slate-800/80">
+<div>
+<span class="text-[10px] text-slate-400 block font-medium">Interpreter</span>
+<select id="interpreterMode" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+<option value="standard">Standard rewrite (F,+,-,[,])</option>
+<option value="eoa_phonetic" selected>EOA Phonetic Turn</option>
+<option value="modulo_poly">Multi-Angle Poly</option>
+</select>
+</div>
+<div>
+<span class="text-[10px] text-slate-400 block font-medium">Palette</span>
+<select id="colorPaletteSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+<option value="rainbow">Spectrum Rainbow</option>
+<option value="frequency">Frequency Hue</option>
+<option value="cyberpunk">Cyberpunk Neon</option>
+<option value="gold">Golden Ratio Sunset</option>
+<option value="monochrome">Scientific White</option>
+</select>
+</div>
+<div>
+<span class="text-[10px] text-slate-400 block font-medium">Step Size</span>
+<input id="stepLengthInput" type="number" value="6" min="1" max="50" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-200 text-center code-font">
+</div>
+<div>
+<span class="text-[10px] text-slate-400 block font-medium">Stroke</span>
+<input id="strokeWidthInput" type="number" value="1.5" min="0.5" max="10" step="0.5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-200 text-center code-font">
+</div>
+</div>
+</div>
+
+<!-- Live Controls -->
+<div class="lg:col-span-3 glass-card rounded-2xl p-4 flex flex-col justify-between space-y-3">
+<h2 class="text-xs font-semibold text-slate-200 uppercase tracking-wider border-b border-slate-800 pb-2 flex items-center gap-2">
+<i class="fa-solid fa-sliders text-cyan-400"></i> Live Controls
+</h2>
+<div class="space-y-1">
+<div class="flex justify-between items-center text-xs">
+<span class="text-slate-300 font-medium">Angle Step θ</span>
+<span id="angleVal" class="text-cyan-400 font-bold code-font">22.5°</span>
+</div>
+<input id="angleSlider" type="range" min="0" max="180" step="0.5" value="22.5" class="w-full accent-cyan-500">
+<div class="flex justify-between text-[9px] text-slate-500 code-font">
+<span>0°</span><span>45°</span><span>60°</span><span>90°</span><span>120°</span><span>180°</span>
+</div>
+</div>
+<div class="space-y-1 pt-1 border-t border-slate-800/80">
+<div class="flex justify-between items-center text-xs">
+<span class="text-slate-300 font-medium">Render Limit</span>
+<span id="renderLimitVal" class="text-cyan-400 font-bold code-font">2,000</span>
+</div>
+<input id="renderLimitSlider" type="range" min="10" max="10000" step="10" value="2000" class="w-full accent-cyan-500">
+<div class="flex justify-between text-[9px] text-slate-500 code-font">
+<span>10</span><span>2.5k</span><span>5k</span><span>10k</span>
+</div>
+</div>
+<div class="space-y-1 pt-1 border-t border-slate-800/80">
+<div class="flex justify-between items-center text-xs">
+<span class="text-slate-300 font-medium">k-gram order (projection)</span>
+<span id="autoKVal" class="text-emerald-400 font-bold code-font text-[10px] text-right leading-tight">—</span>
+</div>
+<input id="kOverrideSlider" type="range" min="1" max="6" step="1" value="0" class="w-full accent-emerald-500">
+<div class="flex justify-between text-[9px] text-slate-500 code-font">
+<span>auto</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
+</div>
+<p id="kOrderNote" class="text-[8px] text-slate-500 leading-tight italic pt-0.5">
+Projection order drives Panel 5. Saturation order = smallest k at which the entropy ladder flattens.
+</p>
+</div>
+<div class="space-y-1 pt-1 border-t border-slate-800/80">
+<div class="flex justify-between items-center text-xs">
+<span class="text-slate-300 font-medium">Turn Strength</span>
+<span id="turnStrengthVal" class="text-cyan-400 font-bold code-font">1.0×</span>
+</div>
+<input id="turnStrengthSlider" type="range" min="0.1" max="4" step="0.1" value="1" class="w-full accent-cyan-500">
+<div class="flex justify-between text-[9px] text-slate-500 code-font">
+<span>0.1×</span><span>1×</span><span>2×</span><span>3×</span><span>4×</span>
+</div>
+</div>
+</div>
+
+<!-- Metrics Card — three epistemic tiers -->
+<div class="lg:col-span-3 glass-card rounded-2xl p-4 flex flex-col space-y-2">
+<h2 class="text-xs font-semibold text-slate-200 uppercase tracking-wider border-b border-slate-800 pb-2 flex items-center gap-2">
+<i class="fa-solid fa-layer-group text-cyan-400"></i> Metrics by Epistemic Tier
+</h2>
+
+<!-- Tier A -->
+<div class="rounded-lg border tier-observed p-2">
+<div class="flex items-center gap-1.5 mb-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span class="text-[9px] uppercase font-bold tracking-wider text-emerald-400">Observed directly</span>
+</div>
+<div class="grid grid-cols-3 gap-1.5 text-[10px]">
+<div>
+<span class="text-[8px] text-slate-500 uppercase block">|w|</span>
+<span id="metricLength" class="text-xs font-bold text-white code-font">0</span>
+</div>
+<div>
+<span class="text-[8px] text-slate-500 uppercase block">|Σ|</span>
+<span id="metricAlphabet" class="text-xs font-bold text-cyan-400 code-font">0</span>
+</div>
+<div>
+<span class="text-[8px] text-slate-500 uppercase block">p(4)</span>
+<span id="metricP4" class="text-xs font-bold text-indigo-300 code-font">0</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-1.5 text-[10px] mt-1.5">
+<div>
+<span class="text-[8px] text-slate-500 uppercase block">p(8)</span>
+<span id="metricP8" class="text-xs font-bold text-indigo-300 code-font">0</span>
+</div>
+<div>
+<span class="text-[8px] text-slate-500 uppercase block">p(12)</span>
+<span id="metricP12" class="text-xs font-bold text-indigo-300 code-font">0</span>
+</div>
+</div>
+<p class="text-[8px] text-slate-500 mt-1.5 leading-tight italic">
+p(k) = # distinct length-k subwords of released word; windows counted once; no circularization.
+</p>
+</div>
+
+<!-- Tier B -->
+<div class="rounded-lg border tier-estimated p-2">
+<div class="flex items-center gap-1.5 mb-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+<span class="text-[9px] uppercase font-bold tracking-wider text-amber-400">Estimated from model</span>
+</div>
+<div class="grid grid-cols-2 gap-1.5 text-[10px]">
+<div>
+<span class="text-[8px] text-slate-500 uppercase block">ρ(A_k)</span>
+<span id="metricEigenvalue" class="text-xs font-bold text-amber-300 code-font">—</span>
+</div>
+<div>
+<span class="text-[8px] text-slate-500 uppercase block">(1/n)ln p(n)</span>
+<span id="entropyStatus" class="text-xs font-bold text-amber-300 code-font">—</span>
+</div>
+</div>
+<p class="text-[8px] text-slate-500 mt-1.5 leading-tight italic">
+ρ(A_k) = spectral radius of the binary adjacency matrix A_k of the order-k factor-overlap graph G_k (edge weights are ignored for the spectral calculation). Distinct from ρ(M_k<sup>stride</sup>) shown in Panel 5.
+</p>
+<p class="text-[8px] text-slate-500 mt-1 leading-tight italic">
+h_k = ln ρ(A_k) is the topological entropy of the sofic shift presented by the empirical graph G_k — a well-defined number for that object. It is not asserted to equal the topological entropy of any underlying system, which is not defined in this tool.
+</p>
+</div>
+
+<!-- Tier C -->
+<div class="rounded-lg border tier-hypothesis p-2">
+<div class="flex items-center gap-1.5 mb-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+<span class="text-[9px] uppercase font-bold tracking-wider text-slate-400">Open hypothesis</span>
+</div>
+<p class="text-[9px] text-slate-400 leading-tight">
+Zero topological entropy &bull; primitive substitution &bull; morphic class &bull; balanced system &bull; fractal structure &mdash; none established by finite-sample analysis; each requires a proof over the full language.
+</p>
+</div>
+</div>
+</section>
+
+<!-- Canvas grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+<!-- Panel 1 -->
+<div class="glass-card rounded-2xl p-3.5 flex flex-col h-[490px] relative group">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#06b6d4]"></span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">1. Symbolic Turtle Rendering</h3>
+</div>
+<div class="flex items-center gap-2">
+<button id="resetViewTurtle" class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"><i class="fa-solid fa-arrows-to-dot"></i> Fit</button>
+<button id="exportTurtle" class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700"><i class="fa-solid fa-download"></i> PNG</button>
+</div>
+</div>
+<div class="flex-grow relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80">
+<canvas id="turtleCanvas"></canvas>
+<div class="absolute bottom-2 left-2 text-[9px] text-slate-500 code-font bg-slate-900/80 px-2 py-1 rounded border border-slate-800">Drag &bull; Scroll</div>
+</div>
+<p class="text-[10px] text-slate-400 leading-snug mt-2 px-1">
+    Letters are mapped to geometric instructions via a deterministic rule. No rewriting system is applied in EOA mode. Vary Turn Strength to test whether fractal structure is intrinsic or induced by the map.
+</p>
+</div>
+
+<!-- Panel 2 -->
+<div class="glass-card rounded-2xl p-3.5 flex flex-col h-[490px]">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-[0_0_8px_#818cf8]"></span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">2. Chaos Game Representation</h3>
+</div>
+<button id="exportCGR" class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700"><i class="fa-solid fa-download"></i> PNG</button>
+</div>
+<div class="flex-grow relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80">
+<canvas id="cgrCanvas"></canvas>
+</div>
+<p class="text-[10px] text-slate-400 leading-snug mt-2 px-1">
+    Observed density of symbol transitions. Empty regions mark transitions absent from the released word. Compare against Panel 12 before reading structure as order.
+</p>
+</div>
+
+<!-- Panel 3 -->
+<div class="glass-card rounded-2xl p-3.5 flex flex-col h-[490px]">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">3. Recurrence Plot</h3>
+</div>
+<button id="exportRecurrence" class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700"><i class="fa-solid fa-download"></i> PNG</button>
+</div>
+<div class="flex-grow relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80">
+<canvas id="recurrenceCanvas"></canvas>
+</div>
+<p class="text-[10px] text-slate-400 leading-snug mt-2 px-1">
+    Diagonal lines indicate repeated symbol positions; block structure indicates subword recurrence.
+</p>
+</div>
+
+<!-- Panel 4 -->
+<div class="glass-card rounded-2xl p-3.5 flex flex-col h-[490px]">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-fuchsia-400 shadow-[0_0_8px_#e879f9]"></span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">4. Rewrite Engine (explicit morphism only)</h3>
+</div>
+<span class="text-[10px] text-slate-400 code-font">σ : Σ → Σ*</span>
+</div>
+<div class="p-2 bg-slate-900 border border-slate-800 rounded-lg mb-2 grid grid-cols-12 gap-2 text-xs">
+<div class="col-span-4">
+<span class="text-[10px] text-slate-400 block font-medium">Axiom</span>
+<input id="lAxiomInput" type="text" value="F" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-0.5 code-font text-cyan-300">
+</div>
+<div class="col-span-6">
+<span class="text-[10px] text-slate-400 block font-medium">Rule</span>
+<input id="lRuleInput" type="text" value="F+F--F+F" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-0.5 code-font text-cyan-300">
+</div>
+<div class="col-span-2">
+<span class="text-[10px] text-slate-400 block font-medium">Gen</span>
+<button id="evalLSystemBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white rounded font-bold py-0.5 text-xs">Go</button>
+</div>
+</div>
+<div class="flex-grow relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80">
+<canvas id="morphicCanvas"></canvas>
+</div>
+<p class="text-[10px] text-slate-400 leading-snug mt-2 px-1">
+    Applies a user-supplied rewriting rule σ(a)=w_a and renders the resulting word class. If no rule is supplied, only the raw symbol waveform is shown.
+</p>
+</div>
+
+<!-- Panel 5 -->
+<div class="glass-card rounded-2xl p-3.5 flex flex-col h-[490px]">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">5. Empirical Eigenvector Projection</h3>
+</div>
+<button id="exportRauzy" class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700"><i class="fa-solid fa-download"></i> PNG</button>
+</div>
+<div class="flex-grow relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80">
+<canvas id="rauzyCanvas"></canvas>
+<div class="absolute bottom-2 left-2 text-[9px] text-slate-400 code-font bg-slate-900/85 px-2 py-1 rounded border border-slate-800">
+<span id="rauzyInfo">λ = —</span>
+</div>
+<div class="absolute top-2 right-2 text-[9px] text-amber-300/90 code-font bg-slate-900/85 px-2 py-1 rounded border border-amber-500/20 max-w-[60%] leading-tight">
+M_k<sup>stride</sup> = stride-k letter matrix &bull; distinct from ρ(A_k) reported in the metrics card
+</div>
+</div>
+<p class="text-[10px] text-slate-400 leading-snug mt-2 px-1">
+    Prefix Parikh walk projected onto the empirical contracting plane. The reported ρ(M_k<sup>stride</sup>) is the spectral radius of the <em>stride-k letter matrix</em> &mdash; distinct from the binary-adjacency ρ(A_k) shown in the metrics card. Point cloud geometry is estimated from the released word, not proved for the language.
+</p>
+</div>
+
+<!-- Panel 6 -->
+<div class="glass-card rounded-2xl p-3.5 flex flex-col h-[490px]">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-[0_0_8px_#fb7185]"></span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">6. Subword Transition Graph</h3>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-slate-400 code-font">order</span>
+<input id="rauzyOrderSlider" type="range" min="1" max="6" step="1" value="2" class="w-20 accent-amber-500">
+<span id="rauzyOrderVal" class="text-[10px] text-amber-400 font-bold code-font w-3">2</span>
+<button id="exportRauzyGraph" class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700"><i class="fa-solid fa-download"></i> PNG</button>
+</div>
+</div>
+<div class="flex-grow relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80">
+<canvas id="rauzyGraphCanvas"></canvas>
+<div class="absolute bottom-2 left-2 text-[9px] text-slate-500 code-font bg-slate-900/85 px-2 py-1 rounded border border-slate-800">
+<span id="rauzyGraphInfo">nodes: — &bull; edges: — &bull; h_k = —</span>
+</div>
+<div class="absolute top-2 right-2 text-[9px] text-rose-300/90 code-font bg-slate-900/85 px-2 py-1 rounded border border-rose-500/20">
+Deterministic 16-gon layout &bull; matches CGR vertices
+</div>
+</div>
+<p class="text-[10px] text-slate-400 leading-snug mt-2 px-1">
+    Empirical order-k factor-overlap graph G_k of the released word. Node degree and the binary-adjacency spectral radius ρ(A_k) are estimated. h_k = ln ρ(A_k) is the topological entropy of the sofic shift presented by G_k — a well-defined number for that empirical object. It is not asserted to equal the entropy of any underlying system, which is not defined in this tool.
+</p>
+</div>
+
+<!-- Panel 7 -->
+<div class="glass-card rounded-2xl p-3.5 flex flex-col h-[490px]">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-lime-400 shadow-[0_0_8px_#a3e635]"></span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">7. Desubstitution Test</h3>
+</div>
+<span class="text-[10px] text-slate-400 code-font">σ : Σ → Σ*</span>
+</div>
+<div class="grid grid-cols-12 gap-1.5 mb-2">
+<div class="col-span-6">
+<input id="desubRules" type="text" placeholder="z->zgzhlv; g->gheqv"
+class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-[11px] code-font text-lime-300 focus:outline-none focus:border-lime-500">
+</div>
+<div class="col-span-2">
+<button id="desubTestBtn" class="w-full bg-lime-700/60 hover:bg-lime-600/70 text-lime-100 border border-lime-600/50 rounded font-bold py-1 text-[10px]"><i class="fa-solid fa-vial"></i> Test</button>
+</div>
+<div class="col-span-2">
+<button id="desubAutoBtn" class="w-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded font-bold py-1 text-[10px]"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto</button>
+</div>
+<div class="col-span-2">
+<button id="desubIterBtn" class="w-full bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 rounded font-bold py-1 text-[10px]"><i class="fa-solid fa-rotate"></i> Iter</button>
+</div>
+</div>
+<div class="flex-grow relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80">
+<canvas id="desubCanvas"></canvas>
+<div id="desubStatus" class="absolute top-2 right-2 text-[9px] font-bold code-font bg-slate-900/90 px-2 py-1 rounded border border-slate-700 text-slate-400">IDLE</div>
+</div>
+<div id="desubOutput" class="mt-2 h-14 shrink-0 overflow-auto text-[10px] code-font leading-relaxed bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-400">
+<span class="text-slate-500">// Provide σ or press Auto.</span>
+</div>
+<p class="text-[10px] text-slate-400 leading-snug mt-1 px-1">
+    Tests whether the released word parses uniquely under a user-supplied morphism. Absence of a parse is not proof of non-morphic structure.
+</p>
+</div>
+
+<!-- Panel 8 -->
+<div class="glass-card rounded-2xl p-3.5 flex flex-col h-[490px]">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8]"></span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">8. Factor Complexity p(k) vs k</h3>
+</div>
+<div class="flex items-center gap-2">
+<button id="exportComplexity" class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700"><i class="fa-solid fa-download"></i> PNG</button>
+</div>
+</div>
+<div class="flex-grow relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80">
+<canvas id="complexityCanvas"></canvas>
+<div class="absolute bottom-2 left-2 text-[9px] text-slate-400 code-font bg-slate-900/85 px-2 py-1 rounded border border-slate-800">
+<span id="complexityInfo">p(k) —</span>
+</div>
+<div class="absolute top-2 right-2 text-[9px] text-sky-300/90 code-font bg-slate-900/85 px-2 py-1 rounded border border-sky-500/20 leading-tight">
+log-log &bull; baselines: Sturmian k+1, linear Ck
+</div>
+</div>
+<p class="text-[10px] text-slate-400 leading-snug mt-2 px-1">
+    Log-log slope of the observed complexity curve. Read the curve, not any single point.
+</p>
+</div>
+
+<!-- Panel 9 -->
+<div class="glass-card rounded-2xl p-3.5 flex flex-col h-[490px]">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-violet-400 shadow-[0_0_8px_#a78bfa]"></span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">9. Abelian Complexity a(k) vs k</h3>
+</div>
+<button id="exportAbelian" class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-violet-300 border border-slate-700"><i class="fa-solid fa-download"></i> PNG</button>
+</div>
+<div class="flex-grow relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80">
+<canvas id="abelianCanvas"></canvas>
+<div class="absolute bottom-2 left-2 text-[9px] text-slate-400 code-font bg-slate-900/85 px-2 py-1 rounded border border-slate-800">
+<span id="abelianInfo">a(k) —</span>
+</div>
+<div class="absolute top-2 right-2 text-[9px] text-violet-300/90 code-font bg-slate-900/85 px-2 py-1 rounded border border-violet-500/20">
+distinct Parikh vectors of length-k factors
+</div>
+</div>
+<p class="text-[10px] text-slate-400 leading-snug mt-2 px-1">
+    Number of distinct Parikh vectors of length-k factors of the released word.
+</p>
+</div>
+
+<!-- Panel 10 -->
+<div class="glass-card rounded-2xl p-3.5 flex flex-col h-[490px]">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_8px_#2dd4bf]"></span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">10. Finite-Sample Block-Growth Ladder</h3>
+</div>
+<button id="exportEntropy" class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700"><i class="fa-solid fa-download"></i> PNG</button>
+</div>
+<div class="flex-grow relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80">
+<canvas id="entropyCanvas"></canvas>
+<div class="absolute bottom-2 left-2 text-[9px] text-slate-400 code-font bg-slate-900/85 px-2 py-1 rounded border border-slate-800">
+<span id="entropyInfo">h_k = ln ρ(A_k) —</span>
+</div>
+<div class="absolute top-2 right-2 text-[9px] text-teal-300/90 code-font bg-slate-900/85 px-2 py-1 rounded border border-teal-500/20 leading-tight max-w-[60%]">
+h_k = ln ρ(A_k) → exact (1/n)ln p(n) as k grows
+</div>
+</div>
+<p class="text-[10px] text-slate-400 leading-snug mt-2 px-1">
+    Sofic bounds from order-k binary factor-overlap graphs vs. the finite-sample block-growth estimate. Each h_k = ln ρ(A_k) is the topological entropy of the sofic shift presented by the empirical graph G_k. It is not asserted to be the topological entropy of any underlying system, which is not defined in this tool. Edge weights are ignored for the spectral calculation.
+</p>
+</div>
+
+<!-- Panel 11 -->
+<div class="glass-card rounded-2xl p-3.5 flex flex-col h-[490px]">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-orange-400 shadow-[0_0_8px_#fb923c]"></span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">11. Prefix-Frequency Discrepancy</h3>
+</div>
+<button id="exportBalance" class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-orange-300 border border-slate-700"><i class="fa-solid fa-download"></i> PNG</button>
+</div>
+<div class="flex-grow relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80">
+<canvas id="balanceCanvas"></canvas>
+<div class="absolute bottom-2 left-2 text-[9px] text-slate-400 code-font bg-slate-900/85 px-2 py-1 rounded border border-slate-800">
+<span id="balanceInfo">max_c |N_c(n) − n·π_c| —</span>
+</div>
+<div class="absolute top-2 right-2 text-[9px] text-orange-300/90 code-font bg-slate-900/85 px-2 py-1 rounded border border-orange-500/20">
+Finite-sample observation
+</div>
+</div>
+<p class="text-[10px] text-slate-400 leading-snug mt-2 px-1">
+    Maximum observed deviation of prefix symbol counts from the asymptotic frequency vector.
+</p>
+</div>
+
+<!-- Panel 12 -->
+<div class="glass-card rounded-2xl p-3.5 flex flex-col h-[490px]">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-pink-400 shadow-[0_0_8px_#f472b6]"></span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">12. Surrogate Controls (CGR comparison)</h3>
+</div>
+<button id="exportSurrogate" class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-pink-300 border border-slate-700"><i class="fa-solid fa-download"></i> PNG</button>
+</div>
+<div class="flex-grow relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80">
+<canvas id="surrogateCanvas"></canvas>
+</div>
+<p class="text-[10px] text-slate-400 leading-snug mt-2 px-1">
+    <strong class="text-pink-300">Experiment:</strong> Compare the original CGR against a frequency-shuffle, a Markov order-1 surrogate, and a periodic control. Structural features present in the original but absent in all surrogates are evidence of long-range order. Features reproduced by the Markov surrogate are explained by lower-order statistics alone. Surrogates are seeded deterministically from the sequence, so this panel is reproducible across exports. A statistically rigorous surrogate study would require replicate ensembles per surrogate and multiple-testing control across statistics; that is out of scope here.
+</p>
+</div>
+
+</section>
+</main>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// EOA Sample — motif concat (default; user replaces via input)
+// NOTE: this is a UI placeholder, NOT output of the EOA β-operator.
+// The UI advertises this explicitly ("Placeholder Sample" button +
+// placeholder notice in the disclosure bar) to avoid misrepresenting
+// a demo sequence as a released EOA sequence.
+// ════════════════════════════════════════════════════════════════
+
+const DPR = window.devicePixelRatio || 1;
+
+// ════════════════════════════════════════════════════════════════
+// Element refs
+// ════════════════════════════════════════════════════════════════
+const sequenceInput = document.getElementById('sequenceInput');
+const metaLetter = document.getElementById('metaLetter');
+const metaLCR = document.getElementById('metaLCR');
+const disclosureLCR = document.getElementById('disclosureLCR');
+const angleSlider = document.getElementById('angleSlider');
+const angleVal = document.getElementById('angleVal');
+const renderLimitSlider = document.getElementById('renderLimitSlider');
+const renderLimitVal = document.getElementById('renderLimitVal');
+const interpreterMode = document.getElementById('interpreterMode');
+const colorPaletteSelect = document.getElementById('colorPaletteSelect');
+const stepLengthInput = document.getElementById('stepLengthInput');
+const strokeWidthInput = document.getElementById('strokeWidthInput');
+const kOverrideSlider = document.getElementById('kOverrideSlider');
+const autoKVal = document.getElementById('autoKVal');
+const kOrderNote = document.getElementById('kOrderNote');
+const turnStrengthSlider = document.getElementById('turnStrengthSlider');
+const turnStrengthVal = document.getElementById('turnStrengthVal');
+const metricLength = document.getElementById('metricLength');
+const metricAlphabet = document.getElementById('metricAlphabet');
+const metricP4 = document.getElementById('metricP4');
+const metricP8 = document.getElementById('metricP8');
+const metricP12 = document.getElementById('metricP12');
+const metricEigenvalue = document.getElementById('metricEigenvalue');
+const entropyStatus = document.getElementById('entropyStatus');
+const turtleCanvas = document.getElementById('turtleCanvas');
+const cgrCanvas = document.getElementById('cgrCanvas');
+const recurrenceCanvas = document.getElementById('recurrenceCanvas');
+const morphicCanvas = document.getElementById('morphicCanvas');
+const rauzyCanvas = document.getElementById('rauzyCanvas');
+const rauzyGraphCanvas = document.getElementById('rauzyGraphCanvas');
+const desubCanvas = document.getElementById('desubCanvas');
+const complexityCanvas = document.getElementById('complexityCanvas');
+const abelianCanvas = document.getElementById('abelianCanvas');
+const entropyCanvas = document.getElementById('entropyCanvas');
+const balanceCanvas = document.getElementById('balanceCanvas');
+const surrogateCanvas = document.getElementById('surrogateCanvas');
+const complexityInfo = document.getElementById('complexityInfo');
+const abelianInfo = document.getElementById('abelianInfo');
+const entropyInfo = document.getElementById('entropyInfo');
+const balanceInfo = document.getElementById('balanceInfo');
+const rauzyInfo = document.getElementById('rauzyInfo');
+const rauzyGraphInfo = document.getElementById('rauzyGraphInfo');
+
+// ════════════════════════════════════════════════════════════════
+// Global analysis state
+// ════════════════════════════════════════════════════════════════
+const analysis = {
+  seq: '', alphabet: [], alphaIdx: new Map(), d: 0, N: 0,
+  pn: [], an: [], ladder: [], exactEntropy: [], balance: null,
+  autoK: 1, kTight: false, spectrum: null,
+  rauzyK: 1, rauzyLambda: 0,
+};
+
+// ════════════════════════════════════════════════════════════════
+// Deterministic PRNG for surrogate controls (Panel 12).
+// The sequence is hashed to a 32-bit seed via a synchronous,
+// two-lane FNV/multiplier mix, then driven through xorshift32.
+// Same sequence → same surrogates → same Panel 12 PNG on every
+// export, which keeps the report reproducible for this panel too.
+// ════════════════════════════════════════════════════════════════
+function sequenceSeed(str) {
+  let h1 = 0x811c9dc5 >>> 0;
+  let h2 = 0x9e3779b9 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    h1 ^= c;           h1 = Math.imul(h1, 16777619)   >>> 0;
+    h2 ^= (c + i);     h2 = Math.imul(h2, 2246822519) >>> 0;
+  }
+  const s = (h1 ^ h2) >>> 0;
+  return s || 0x9e3779b9;
+}
+function xorshift32(seed) {
+  let s = seed >>> 0;
+  if (s === 0) s = 0x9e3779b9;
+  return function() {
+    s ^= s << 13; s >>>= 0;
+    s ^= s >>> 17;
+    s ^= s << 5;  s >>>= 0;
+    return s / 4294967296;
+  };
+}
+
+// ════════════════════════════════════════════════════════════════
+// Presets
+// ════════════════════════════════════════════════════════════════
+
+document.getElementById('presetSierpinski').onclick = () => {
+  sequenceInput.value = 'F--F--F';
+  metaLetter.value = 'F';
+  metaLCR.value = '60';
+  document.getElementById('lAxiomInput').value = 'F--F--F';
+  document.getElementById('lRuleInput').value = 'F-F+F+F-F';
+  document.getElementById('desubRules').value = 'F->F-F+F+F-F';
+  angleSlider.value = 60;
+  interpreterMode.value = 'standard';
+  kOverrideSlider.value = 0;
+  turnStrengthSlider.value = 1;
+  generateLSystem();
+};
+document.getElementById('presetTerdragon').onclick = () => {
+  sequenceInput.value = 'F';
+  metaLetter.value = 'F';
+  metaLCR.value = '120';
+  document.getElementById('lAxiomInput').value = 'F';
+  document.getElementById('lRuleInput').value = 'F+F-F';
+  document.getElementById('desubRules').value = 'F->F+F-F';
+  angleSlider.value = 120;
+  interpreterMode.value = 'standard';
+  kOverrideSlider.value = 0;
+  turnStrengthSlider.value = 1;
+  generateLSystem();
+};
+document.getElementById('presetDragon').onclick = () => {
+  sequenceInput.value = 'FX';
+  metaLetter.value = 'X';
+  metaLCR.value = '90';
+  document.getElementById('lAxiomInput').value = 'FX';
+  document.getElementById('lRuleInput').value = 'X+YF+';
+  document.getElementById('desubRules').value = 'X->X+YF+; Y->-FX-Y; F->F';
+  angleSlider.value = 90;
+  interpreterMode.value = 'standard';
+  kOverrideSlider.value = 0;
+  turnStrengthSlider.value = 1;
+  generateLSystem();
+};
+document.getElementById('clearBtn').onclick = () => {
+  sequenceInput.value = '';
+  updateAll();
+};
+
+// ════════════════════════════════════════════════════════════════
+// Turtle pan/zoom
+// ════════════════════════════════════════════════════════════════
+let turtlePanX = 0, turtlePanY = 0, turtleZoom = 1, isDragging = false, dragStartX = 0, dragStartY = 0;
+turtleCanvas.addEventListener('mousedown', e => { isDragging = true; dragStartX = e.clientX - turtlePanX; dragStartY = e.clientY - turtlePanY; });
+window.addEventListener('mousemove', e => { if (!isDragging) return; turtlePanX = e.clientX - dragStartX; turtlePanY = e.clientY - dragStartY; drawTurtlePath(); });
+window.addEventListener('mouseup', () => { isDragging = false; });
+turtleCanvas.addEventListener('wheel', e => { e.preventDefault(); turtleZoom *= e.deltaY < 0 ? 1.15 : 0.85; drawTurtlePath(); }, { passive: false });
+document.getElementById('resetViewTurtle').onclick = () => { turtlePanX = 0; turtlePanY = 0; turtleZoom = 1; drawTurtlePath(); };
+
+// ════════════════════════════════════════════════════════════════
+// Color
+// ════════════════════════════════════════════════════════════════
+function getColor(i, total, char, paletteMode) {
+  const ratio = total > 1 ? i / total : 0;
+  if (paletteMode === 'rainbow') return `hsl(${(ratio * 360) % 360}, 90%, 55%)`;
+  if (paletteMode === 'frequency') { const code = char.charCodeAt(0) || 65; return `hsl(${(code * 37) % 360}, 85%, 60%)`; }
+  if (paletteMode === 'cyberpunk') { const hue = ratio < 0.5 ? 180 + ratio * 80 : 300 + ratio * 60; return `hsl(${hue}, 100%, 50%)`; }
+  if (paletteMode === 'gold') return `hsl(${30 + ratio * 60}, 90%, 50%)`;
+  return '#f8fafc';
+}
+
+// ════════════════════════════════════════════════════════════════
+// Analytics core
+// ════════════════════════════════════════════════════════════════
+function computeFactorComplexity(seq, nmax) {
+  const out = [];
+  for (let n = 1; n <= nmax && n <= seq.length; n++) {
+    const set = new Set();
+    for (let i = 0; i + n <= seq.length; i++) set.add(seq.substr(i, n));
+    out.push({ n, p: set.size });
+    if (set.size === seq.length - n + 1 && n >= 4) {
+      for (let m = n + 1; m <= nmax && m <= seq.length; m++) out.push({ n: m, p: seq.length - m + 1 });
+      break;
+    }
+  }
+  return out;
+}
+
+function computeAbelianComplexity(seq, alphabet, nmax) {
+  const d = alphabet.length;
+  if (d === 0) return [];
+  const idx = new Map(alphabet.map((c, i) => [c, i]));
+  const P = [new Int32Array(d)];
+  for (let i = 0; i < seq.length; i++) {
+    const prev = P[P.length - 1];
+    const next = new Int32Array(prev);
+    const j = idx.get(seq[i]);
+    if (j !== undefined) next[j]++;
+    P.push(next);
+  }
+  const out = [];
+  const cap = Math.min(nmax, seq.length);
+  for (let n = 1; n <= cap; n++) {
+    const set = new Set();
+    for (let i = 0; i + n <= seq.length; i++) {
+      let key = '';
+      for (let k = 0; k < d; k++) key += (P[i + n][k] - P[i][k]) + ',';
+      set.add(key);
+    }
+    out.push({ n, a: set.size });
+  }
+  return out;
+}
+
+// Spectral radius of the BINARY adjacency structure of the supplied
+// edge list. Edge weights (e.w) are intentionally ignored: in classical
+// symbolic dynamics the topological-entropy-like quantity is defined on
+// the allowed-transition (binary) graph, not on the count-weighted graph.
+function sparseSpectralRadius(N, edges) {
+  if (!N) return 0;
+  const adj = Array.from({ length: N }, () => []);
+  for (const e of edges) adj[e.s].push(e.t);
+  let v = new Float64Array(N).fill(1 / Math.sqrt(N));
+  let lam = 0;
+  for (let it = 0; it < 300; it++) {
+    const w = new Float64Array(N);
+    for (let i = 0; i < N; i++) {
+      const vi = v[i]; if (vi === 0) continue;
+      const ai = adj[i];
+      for (let q = 0; q < ai.length; q++) w[ai[q]] += vi;
+    }
+    let nrm = 0;
+    for (let j = 0; j < N; j++) nrm += w[j] * w[j];
+    nrm = Math.sqrt(nrm);
+    if (nrm < 1e-14) return 0;
+    for (let j = 0; j < N; j++) w[j] /= nrm;
+    v = w;
+    lam = nrm;
+  }
+  return lam;
+}
+
+// G_k — order-k factor-overlap graph.
+// Nodes = distinct order-k factors of the released word.
+// Edges = observed overlaps (w_i..w_{i+k-1}) -> (w_{i+1}..w_{i+k}).
+// Edge weight = observed count (used for display; ignored by
+// sparseSpectralRadius, which computes rho(A_k) on the binary adjacency).
+function buildKGramGraph(seq, k, cap) {
+  const freq = new Map();
+  for (let i = 0; i + k <= seq.length; i++) {
+    const w = seq.substr(i, k);
+    freq.set(w, (freq.get(w) || 0) + 1);
+  }
+  let words = Array.from(freq.keys());
+  const total = words.length;
+  let truncated = false;
+  if (cap && words.length > cap) {
+    words.sort((a, b) => (freq.get(b) - freq.get(a)) || (a < b ? -1 : 1));
+    words = words.slice(0, cap);
+    truncated = true;
+  }
+  words.sort();
+  const N = words.length;
+  const idx = new Map(words.map((w, i) => [w, i]));
+  const edgeMap = new Map();
+  for (let i = 0; i + k < seq.length; i++) {
+    const a = seq.substr(i, k), b = seq.substr(i + 1, k);
+    const ia = idx.get(a), ib = idx.get(b);
+    if (ia === undefined || ib === undefined) continue;
+    const key = ia * N + ib;
+    edgeMap.set(key, (edgeMap.get(key) || 0) + 1);
+  }
+  const edges = [];
+  edgeMap.forEach((count, key) => edges.push({ s: Math.floor(key / N), t: key % N, w: count }));
+  return { words, edges, total, truncated, N, freq };
+}
+
+function computeEntropyLadder(seq, kmax) {
+  const out = [];
+  for (let k = 1; k <= kmax && k <= seq.length; k++) {
+    const g = buildKGramGraph(seq, k, 1200);
+    const rho = sparseSpectralRadius(g.N, g.edges);
+    out.push({ k, rho, logRho: rho > 0 ? Math.log(rho) : 0, nodes: g.N, edges: g.edges.length });
+  }
+  return out;
+}
+
+function computePrefixBalance(seq, alphabet, limit) {
+  const d = alphabet.length;
+  if (!d) return null;
+  const idx = new Map(alphabet.map((c, i) => [c, i]));
+  const N = Math.min(seq.length, limit || seq.length);
+  const total = new Int32Array(d);
+  for (let i = 0; i < seq.length; i++) { const j = idx.get(seq[i]); if (j !== undefined) total[j]++; }
+  const freq = new Float64Array(d);
+  for (let j = 0; j < d; j++) freq[j] = total[j] / seq.length;
+  const curve = [];
+  const running = new Int32Array(d);
+  let maxDev = 0;
+  const step = Math.max(1, Math.floor(N / 600));
+  for (let i = 0; i < N; i++) {
+    const j = idx.get(seq[i]);
+    if (j !== undefined) running[j]++;
+    if (i % step === 0 || i === N - 1) {
+      let localMax = 0;
+      for (let k = 0; k < d; k++) {
+        const dev = Math.abs(running[k] - (i + 1) * freq[k]);
+        if (dev > localMax) localMax = dev;
+      }
+      curve.push({ n: i + 1, dev: localMax });
+      if (localMax > maxDev) maxDev = localMax;
+    }
+  }
+  // The reported quantity is the numeric maxDev itself. No binary
+  // "isBounded" flag is exposed; any classification threshold would be
+  // arbitrary and is left to the reader.
+  return { curve, maxDev, freq: Array.from(freq) };
+}
+
+function chooseAutoK(ladder) {
+  if (!ladder.length) return 1;
+  for (let i = 0; i < ladder.length - 1; i++) {
+    const gap = ladder[i].logRho - ladder[i + 1].logRho;
+    if (gap < 0.005) return ladder[i].k;
+  }
+  return ladder[ladder.length - 1].k;
+}
+
+function analyzeSequence() {
+  const seq = sequenceInput.value.replace(/\s+/g, '');
+  analysis.seq = seq;
+  analysis.N = seq.length;
+  analysis.alphabet = Array.from(new Set(seq)).sort();
+  analysis.d = analysis.alphabet.length;
+  analysis.alphaIdx = new Map(analysis.alphabet.map((c, i) => [c, i]));
+
+  if (!seq.length) {
+    analysis.pn = []; analysis.an = []; analysis.ladder = []; analysis.balance = null;
+    analysis.exactEntropy = []; analysis.autoK = 1; analysis.rauzyK = 1; analysis.rauzyLambda = 0;
+    return;
+  }
+
+  const nmax = Math.min(30, Math.max(6, Math.floor(seq.length / 6)));
+  analysis.pn = computeFactorComplexity(seq, nmax);
+  analysis.an = computeAbelianComplexity(seq, analysis.alphabet, nmax);
+  analysis.exactEntropy = analysis.pn.filter(r => r.p > 0 && r.n >= 2)
+    .map(r => ({ n: r.n, val: Math.log(r.p) / r.n }));
+  analysis.ladder = computeEntropyLadder(seq, Math.min(6, Math.max(2, Math.floor(Math.log2(seq.length)))));
+  analysis.balance = computePrefixBalance(seq, analysis.alphabet, Math.min(seq.length, 10000));
+
+  const override = parseInt(kOverrideSlider.value, 10);
+  analysis.autoK = chooseAutoK(analysis.ladder);
+  analysis.rauzyK = override > 0 ? override : analysis.autoK;
+  const row = analysis.ladder.find(r => r.k === analysis.rauzyK);
+  analysis.rauzyLambda = row ? row.rho : 0;
+}
+
+// ════════════════════════════════════════════════════════════════
+// Metrics
+// ════════════════════════════════════════════════════════════════
+function computeMetrics(seq) {
+  metricLength.textContent = seq.length.toLocaleString();
+  metricAlphabet.textContent = analysis.d;
+  const p4 = analysis.pn.find(r => r.n === 4);
+  const p8 = analysis.pn.find(r => r.n === 8);
+  const p12 = analysis.pn.find(r => r.n === 12);
+  metricP4.textContent = p4 ? p4.p : 0;
+  metricP8.textContent = p8 ? p8.p : 0;
+  metricP12.textContent = p12 ? p12.p : 0;
+  // Metrics card shows rho(A_k) at the PROJECTION order k = analysis.rauzyK.
+  // This is distinct from h_k at the LADDER-SATURATION order shown in Panel 10.
+  metricEigenvalue.textContent = analysis.rauzyLambda > 0 ? analysis.rauzyLambda.toFixed(4) : '—';
+  autoKVal.textContent = kOverrideSlider.value === '0'
+    ? `proj k=${analysis.rauzyK} · sat k=${analysis.autoK}`
+    : `proj k=${analysis.rauzyK} (forced) · sat k=${analysis.autoK}`;
+  if (kOrderNote) {
+    kOrderNote.textContent = `Projection order: k = ${analysis.rauzyK}. Entropy-ladder saturation order: k = ${analysis.autoK}.`;
+  }
+
+  const lastE = analysis.exactEntropy.length ? analysis.exactEntropy[analysis.exactEntropy.length - 1] : null;
+  entropyStatus.textContent = lastE ? lastE.val.toFixed(4) : '—';
+
+  if (disclosureLCR) disclosureLCR.textContent = metaLCR.value.trim() || '(unspecified)';
+}
+
+// ════════════════════════════════════════════════════════════════
+// Turtle
+// ════════════════════════════════════════════════════════════════
+function drawTurtlePath() {
+  const ctx = turtleCanvas.getContext('2d');
+  const w = turtleCanvas.width = turtleCanvas.clientWidth * DPR;
+  const h = turtleCanvas.height = turtleCanvas.clientHeight * DPR;
+  ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+  const rawSeq = sequenceInput.value.replace(/\s+/g, '');
+  const seq = rawSeq.substring(0, parseInt(renderLimitSlider.value, 10));
+  if (!seq.length) return;
+  const angleRad = parseFloat(angleSlider.value) * Math.PI / 180;
+  const stepLen = parseFloat(stepLengthInput.value) * DPR;
+  const strokeW = parseFloat(strokeWidthInput.value) * DPR;
+  const strength = parseFloat(turnStrengthSlider.value);
+  const mode = interpreterMode.value;
+  const palette = colorPaletteSelect.value;
+  let x = 0, y = 0, dir = -Math.PI / 2;
+  const stack = [], segments = [];
+  let minX = 0, maxX = 0, minY = 0, maxY = 0;
+  const rank = analysis.alphaIdx;
+  const d = Math.max(analysis.d, 1);
+  for (let i = 0; i < seq.length; i++) {
+    const c = seq[i]; let moved = false;
+    if (mode === 'standard') {
+      if (c === 'F' || c === 'G' || c === 'X' || c === 'Y') {
+        const nx = x + Math.cos(dir) * stepLen, ny = y + Math.sin(dir) * stepLen;
+        segments.push({ x1: x, y1: y, x2: nx, y2: ny, idx: i, char: c });
+        x = nx; y = ny; moved = true;
+      } else if (c === '+') dir += angleRad;
+      else if (c === '-') dir -= angleRad;
+      else if (c === '[') stack.push({ x, y, dir });
+      else if (c === ']') { if (stack.length) { const s = stack.pop(); x = s.x; y = s.y; dir = s.dir; } }
+    } else if (mode === 'eoa_phonetic') {
+      const turnFactor = ((c.charCodeAt(0) % 8) - 3.5) * strength;
+      dir += turnFactor * angleRad;
+      const nx = x + Math.cos(dir) * stepLen, ny = y + Math.sin(dir) * stepLen;
+      segments.push({ x1: x, y1: y, x2: nx, y2: ny, idx: i, char: c });
+      x = nx; y = ny; moved = true;
+    } else if (mode === 'modulo_poly') {
+      const idx12 = c.charCodeAt(0) % 12;
+      dir += ((idx12 - 5.5) * strength) * angleRad;
+      const nx = x + Math.cos(dir) * stepLen, ny = y + Math.sin(dir) * stepLen;
+      segments.push({ x1: x, y1: y, x2: nx, y2: ny, idx: i, char: c });
+      x = nx; y = ny; moved = true;
+    }
+    if (moved) { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+  }
+  const rX = (maxX - minX) || 1, rY = (maxY - minY) || 1;
+  const fit = Math.min((w - 80) / rX, (h - 80) / rY) * turtleZoom;
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+  ctx.save();
+  ctx.translate(w / 2 + turtlePanX, h / 2 + turtlePanY);
+  ctx.lineWidth = strokeW;
+  for (const seg of segments) {
+    ctx.beginPath();
+    ctx.moveTo((seg.x1 - cx) * fit, (seg.y1 - cy) * fit);
+    ctx.lineTo((seg.x2 - cx) * fit, (seg.y2 - cy) * fit);
+    ctx.strokeStyle = getColor(seg.idx, segments.length, seg.char, palette);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ════════════════════════════════════════════════════════════════
+// CGR
+// ════════════════════════════════════════════════════════════════
+function drawCGR() {
+  const ctx = cgrCanvas.getContext('2d');
+  const w = cgrCanvas.width = cgrCanvas.clientWidth * DPR;
+  const h = cgrCanvas.height = cgrCanvas.clientHeight * DPR;
+  ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+  const seq = sequenceInput.value.replace(/\s+/g, '').substring(0, parseInt(renderLimitSlider.value, 10));
+  if (!seq.length) return;
+  const alphabet = analysis.alphabet;
+  const N = Math.max(alphabet.length, 3);
+  const cx = w / 2, cy = h / 2, radius = Math.min(w, h) * 0.42;
+  const vertices = {};
+  for (let i = 0; i < N; i++) {
+    const a = (i * 2 * Math.PI) / N - Math.PI / 2;
+    const vx = cx + radius * Math.cos(a), vy = cy + radius * Math.sin(a);
+    if (i < alphabet.length) vertices[alphabet[i]] = { x: vx, y: vy };
+    ctx.beginPath();
+    ctx.arc(vx, vy, 4 * DPR, 0, 2 * Math.PI);
+    ctx.fillStyle = '#818cf8'; ctx.fill();
+  }
+  let px = cx, py = cy;
+  const palette = colorPaletteSelect.value;
+  for (let i = 0; i < seq.length; i++) {
+    const t = vertices[seq[i]];
+    if (!t) continue;
+    px = (px + t.x) / 2; py = (py + t.y) / 2;
+    ctx.fillStyle = getColor(i, seq.length, seq[i], palette);
+    ctx.fillRect(px, py, 1.8 * DPR, 1.8 * DPR);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Recurrence
+// ════════════════════════════════════════════════════════════════
+function drawRecurrence() {
+  const ctx = recurrenceCanvas.getContext('2d');
+  const w = recurrenceCanvas.width = recurrenceCanvas.clientWidth * DPR;
+  const h = recurrenceCanvas.height = recurrenceCanvas.clientHeight * DPR;
+  ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+  const seq = sequenceInput.value.replace(/\s+/g, '').substring(0, Math.min(parseInt(renderLimitSlider.value, 10), 1000));
+  if (!seq.length) return;
+  const N = seq.length, sx = w / N, sy = h / N;
+  const palette = colorPaletteSelect.value;
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      if (seq[i] === seq[j]) {
+        ctx.fillStyle = getColor(i, N, seq[i], palette);
+        ctx.fillRect(i * sx, j * sy, Math.max(sx, 1), Math.max(sy, 1));
+      }
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Rewrite engine
+// ════════════════════════════════════════════════════════════════
+function generateLSystem() {
+  const axiom = document.getElementById('lAxiomInput').value;
+  const rule = document.getElementById('lRuleInput').value;
+  let cur = axiom;
+  for (let iter = 0; iter < 4; iter++) {
+    let next = '';
+    for (let j = 0; j < cur.length; j++) {
+      const c = cur[j];
+      if (c === 'F') next += rule;
+      else if (c === 'X') next += 'X+YF+';
+      else if (c === 'Y') next += '-FX-Y';
+      else next += c;
+    }
+    cur = next;
+    if (cur.length > 8000) break;
+  }
+  sequenceInput.value = cur;
+  updateAll();
+}
+
+function drawMorphicCanvas() {
+  const ctx = morphicCanvas.getContext('2d');
+  const w = morphicCanvas.width = morphicCanvas.clientWidth * DPR;
+  const h = morphicCanvas.height = morphicCanvas.clientHeight * DPR;
+  ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+  const seq = sequenceInput.value.replace(/\s+/g, '').substring(0, 1500);
+  if (!seq.length) return;
+  ctx.beginPath();
+  ctx.strokeStyle = '#e879f9';
+  ctx.lineWidth = 1.5 * DPR;
+  const step = w / seq.length;
+  for (let i = 0; i < seq.length; i++) {
+    const val = (seq.charCodeAt(i) % 16) / 16;
+    const y = h - (val * (h - 40) + 20);
+    if (i === 0) ctx.moveTo(0, y); else ctx.lineTo(i * step, y);
+  }
+  ctx.stroke();
+}
+
+// ════════════════════════════════════════════════════════════════
+// Morphism parsing
+// ════════════════════════════════════════════════════════════════
+function parseMorphism(str) {
+  const map = new Map();
+  if (!str) return map;
+  for (const raw of str.split(/[;,]/)) {
+    const p = raw.trim(); if (!p) continue;
+    const m = p.split(/->|→|=>/); if (m.length < 2) continue;
+    const lhs = m[0].trim(), rhs = m.slice(1).join('').trim();
+    if (lhs.length === 1 && rhs.length >= 1) map.set(lhs, rhs);
+  }
+  return map;
+}
+
+function pfPair(M, iters) {
+  iters = iters || 400;
+  const d = M.length; if (!d) return null;
+  let r = new Float64Array(d).fill(1 / d);
+  for (let it = 0; it < iters; it++) {
+    const w = new Float64Array(d);
+    for (let i = 0; i < d; i++) {
+      const vi = r[i]; if (!vi) continue;
+      const row = M[i];
+      for (let j = 0; j < d; j++) w[j] += vi * row[j];
+    }
+    let s = 0; for (let j = 0; j < d; j++) s += w[j];
+    if (s <= 1e-300) break;
+    for (let j = 0; j < d; j++) w[j] /= s;
+    r = w;
+  }
+  let l = new Float64Array(d).fill(1 / d);
+  for (let it = 0; it < iters; it++) {
+    const w = new Float64Array(d);
+    for (let i = 0; i < d; i++) {
+      const row = M[i]; let s = 0;
+      for (let j = 0; j < d; j++) s += l[j] * row[j];
+      w[i] = s;
+    }
+    let s = 0; for (let j = 0; j < d; j++) s += w[j];
+    if (s <= 1e-300) break;
+    for (let j = 0; j < d; j++) w[j] /= s;
+    l = w;
+  }
+  let num = 0, den = 0;
+  for (let i = 0; i < d; i++) {
+    den += l[i] * r[i]; let s = 0;
+    for (let j = 0; j < d; j++) s += M[i][j] * r[j];
+    num += l[i] * s;
+  }
+  const lambda = Math.abs(den) > 1e-300 ? num / den : 0;
+  return { lambda, r, l };
+}
+
+function pcaAxes(pts, dim) {
+  const n = pts.length; if (!n) return null;
+  const mean = new Float64Array(dim);
+  for (const p of pts) for (let k = 0; k < dim; k++) mean[k] += p[k];
+  for (let k = 0; k < dim; k++) mean[k] /= n;
+  const C = Array.from({ length: dim }, () => new Float64Array(dim));
+  for (const p of pts) {
+    const dv = new Float64Array(dim);
+    for (let k = 0; k < dim; k++) dv[k] = p[k] - mean[k];
+    for (let a = 0; a < dim; a++) for (let b = 0; b < dim; b++) C[a][b] += dv[a] * dv[b];
+  }
+  for (let a = 0; a < dim; a++) for (let b = 0; b < dim; b++) C[a][b] /= n;
+  const axes = [], Cw = C.map(row => Float64Array.from(row));
+  for (let k = 0; k < Math.min(2, dim); k++) {
+    let v = new Float64Array(dim).fill(1 / Math.sqrt(dim));
+    for (let it = 0; it < 250; it++) {
+      const w = new Float64Array(dim);
+      for (let a = 0; a < dim; a++) { let s = 0; for (let b = 0; b < dim; b++) s += Cw[a][b] * v[b]; w[a] = s; }
+      let nrm = 0; for (let a = 0; a < dim; a++) nrm += w[a] * w[a];
+      nrm = Math.sqrt(nrm); if (nrm < 1e-14) break;
+      for (let a = 0; a < dim; a++) w[a] /= nrm;
+      v = w;
+    }
+    axes.push(v);
+    let lam = 0;
+    for (let a = 0; a < dim; a++) { let s = 0; for (let b = 0; b < dim; b++) s += Cw[a][b] * v[b]; lam += v[a] * s; }
+    for (let a = 0; a < dim; a++) for (let b = 0; b < dim; b++) Cw[a][b] -= lam * v[a] * v[b];
+  }
+  return { mean, axes };
+}
+
+// M_k^stride — letter-level stride matrix.
+//   M[a][b] = #{ i : seq[i] = a, seq[i+k] = b }
+// over the released word. Count-weighted. No normalisation.
+// No inverse-frequency weighting. This is a DIFFERENT object from the
+// factor graph G_k: M_k^stride lives on the letter alphabet, G_k lives
+// on order-k factors. The two spectral radii ρ(M_k^stride) and ρ(A_k)
+// are therefore different numbers and are reported in different panels.
+function buildKGramMatrix(seq, alpha, k) {
+  const d = alpha.length;
+  const idx = new Map(alpha.map((c, i) => [c, i]));
+  const M = Array.from({ length: d }, () => new Float64Array(d));
+  for (let i = 0; i + k < seq.length; i++) {
+    const a = idx.get(seq[i]);
+    const b = idx.get(seq[i + k]);
+    if (a !== undefined && b !== undefined) M[a][b] += 1;
+  }
+  return M;
+}
+
+// ════════════════════════════════════════════════════════════════
+// Panel 5: Empirical eigenvector projection
+// ════════════════════════════════════════════════════════════════
+function drawRauzyProjection() {
+  const ctx = rauzyCanvas.getContext('2d');
+  const w = rauzyCanvas.width = rauzyCanvas.clientWidth * DPR;
+  const h = rauzyCanvas.height = rauzyCanvas.clientHeight * DPR;
+  ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+  const seq = analysis.seq;
+  if (!seq.length || analysis.d < 2) {
+    rauzyInfo.textContent = 'λ = — (degenerate)';
+    ctx.fillStyle = '#334155';
+    ctx.font = `${11 * DPR}px 'Fira Code', monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Insufficient symbol diversity', w / 2, h / 2);
+    return;
+  }
+  const k = analysis.rauzyK;
+  const M = buildKGramMatrix(seq, analysis.alphabet, k);
+  const pf = pfPair(M);
+  if (!pf || !isFinite(pf.lambda)) { rauzyInfo.textContent = 'λ = —'; return; }
+  const lambda = pf.lambda;
+  let ln = 0; for (let i = 0; i < analysis.d; i++) ln += pf.l[i] * pf.l[i];
+  ln = Math.sqrt(ln) || 1;
+  const lh = Array.from(pf.l, x => x / ln);
+  const B = [];
+  for (let kk = 0; kk < analysis.d && B.length < analysis.d - 1; kk++) {
+    const v = new Float64Array(analysis.d);
+    v[kk] = 1;
+    let dot = 0; for (let i = 0; i < analysis.d; i++) dot += v[i] * lh[i];
+    for (let i = 0; i < analysis.d; i++) v[i] -= dot * lh[i];
+    for (const b of B) {
+      let dd = 0; for (let i = 0; i < analysis.d; i++) dd += v[i] * b[i];
+      for (let i = 0; i < analysis.d; i++) v[i] -= dd * b[i];
+    }
+    let nrm = 0; for (let i = 0; i < analysis.d; i++) nrm += v[i] * v[i];
+    nrm = Math.sqrt(nrm);
+    if (nrm > 1e-8) { for (let i = 0; i < analysis.d; i++) v[i] /= nrm; B.push(v); }
+  }
+  if (!B.length) { rauzyInfo.textContent = 'λ = —'; return; }
+  const dim = B.length;
+  const pts = [];
+  const parikh = new Float64Array(analysis.d);
+  for (let i = 0; i < seq.length; i++) {
+    const j = analysis.alphaIdx.get(seq[i]);
+    if (j === undefined) continue;
+    parikh[j]++;
+    const c = new Float64Array(dim);
+    for (let kk = 0; kk < dim; kk++) {
+      let s = 0;
+      for (let q = 0; q < analysis.d; q++) s += parikh[q] * B[kk][q];
+      c[kk] = s;
+    }
+    pts.push(c);
+  }
+  if (pts.length < 2) { rauzyInfo.textContent = `λ = ${lambda.toFixed(4)}`; return; }
+  const pca = pcaAxes(pts, dim);
+  if (!pca) return;
+  const xy = pts.map(p => {
+    let x = 0, y = 0;
+    for (let kk = 0; kk < dim; kk++) x += (p[kk] - pca.mean[kk]) * pca.axes[0][kk];
+    if (pca.axes[1]) for (let kk = 0; kk < dim; kk++) y += (p[kk] - pca.mean[kk]) * pca.axes[1][kk];
+    return { x, y };
+  });
+  let mnX = Infinity, mxX = -Infinity, mnY = Infinity, mxY = -Infinity;
+  for (const p of xy) {
+    if (p.x < mnX) mnX = p.x; if (p.x > mxX) mxX = p.x;
+    if (p.y < mnY) mnY = p.y; if (p.y > mxY) mxY = p.y;
+  }
+  const rX = (mxX - mnX) || 1, rY = (mxY - mnY) || 1;
+  const sc = Math.min((w - 60) / rX, (h - 60) / rY);
+  const cx = (mnX + mxX) / 2, cy = (mnY + mxY) / 2;
+  const palette = colorPaletteSelect.value;
+  const sx = p => w / 2 + (p.x - cx) * sc;
+  const sy = p => h / 2 - (p.y - cy) * sc;
+  ctx.lineWidth = 1 * DPR;
+  ctx.beginPath(); ctx.moveTo(sx(xy[0]), sy(xy[0]));
+  for (let i = 1; i < xy.length; i++) ctx.lineTo(sx(xy[i]), sy(xy[i]));
+  ctx.strokeStyle = 'rgba(251, 191, 36, 0.14)'; ctx.stroke();
+  const stepPts = Math.max(1, Math.floor(xy.length / 6000));
+  for (let i = 0; i < xy.length; i += stepPts) {
+    ctx.fillStyle = getColor(i, xy.length, seq[i] || 'F', palette);
+    ctx.globalAlpha = 0.85;
+    ctx.fillRect(sx(xy[i]) - 1 * DPR, sy(xy[i]) - 1 * DPR, 2 * DPR, 2 * DPR);
+  }
+  ctx.globalAlpha = 1;
+  ctx.beginPath();
+  ctx.arc(sx(xy[0]), sy(xy[0]), 3.5 * DPR, 0, 2 * Math.PI);
+  ctx.fillStyle = '#fbbf24'; ctx.fill();
+
+  let l2 = 0;
+  const d = analysis.d;
+  let lr = 0; for (let i = 0; i < d; i++) lr += pf.l[i] * pf.r[i];
+  if (Math.abs(lr) > 1e-12) {
+    const M2 = M.map(row => Float64Array.from(row));
+    for (let i = 0; i < d; i++) for (let j = 0; j < d; j++) M2[i][j] -= lambda * pf.r[i] * pf.l[j] / lr;
+    let v = new Float64Array(d).fill(1 / Math.sqrt(d));
+    for (let it = 0; it < 400; it++) {
+      const wv = new Float64Array(d);
+      for (let i = 0; i < d; i++) {
+        const vi = v[i]; if (!vi) continue;
+        const row = M2[i];
+        for (let j = 0; j < d; j++) wv[j] += vi * row[j];
+      }
+      let nrm = 0; for (let j = 0; j < d; j++) nrm += wv[j] * wv[j];
+      nrm = Math.sqrt(nrm); if (nrm < 1e-14) break;
+      for (let j = 0; j < d; j++) wv[j] /= nrm;
+      v = wv;
+    }
+    let num = 0, den = 0;
+    for (let i = 0; i < d; i++) {
+      den += v[i] * v[i]; let s = 0;
+      for (let j = 0; j < d; j++) s += M2[i][j] * v[j];
+      num += v[i] * s;
+    }
+    l2 = Math.abs(num / Math.max(den, 1e-30));
+  }
+
+  rauzyInfo.innerHTML = `ρ(M_k<sup>stride</sup>) = ${lambda.toFixed(4)} &bull; |λ₂| = ${l2.toFixed(4)} &bull; k = ${k} &bull; dim = ${dim} &bull; n = ${pts.length}`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// Panel 6: Subword transition graph
+// ════════════════════════════════════════════════════════════════
+const rauzyOrderSlider = document.getElementById('rauzyOrderSlider');
+const rauzyOrderVal = document.getElementById('rauzyOrderVal');
+let rg = { key: '', words: [], edges: [], pos: [], screen: [], adj: [], inDeg: [], outDeg: [], total: 0, entropy: 0, truncated: false };
+let rgPanX = 0, rgPanY = 0, rgZoom = 1, rgHover = -1, rgDragging = false, rgLastX = 0, rgLastY = 0;
+
+function fnvHash(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+function starProject(parikh, d) {
+  let x = 0, y = 0;
+  for (let i = 0; i < d; i++) {
+    const theta = (2 * Math.PI * i) / d - Math.PI / 2;
+    x += parikh[i] * Math.cos(theta);
+    y += parikh[i] * Math.sin(theta);
+  }
+  return { x, y };
+}
+
+function rebuildRauzyGraph() {
+  const seq = analysis.seq;
+  const order = parseInt(rauzyOrderSlider.value, 10);
+  const key = order + '|' + seq.length + '|' + fnvHash(seq);
+  if (key === rg.key) return false;
+  rg.key = key;
+  if (!seq.length || seq.length < order) {
+    rg.words = []; rg.edges = []; rg.pos = []; rg.screen = []; rg.total = 0; rg.entropy = 0;
+    rauzyGraphInfo.innerHTML = 'nodes: 0 &bull; edges: 0 &bull; h_k = —';
+    return true;
+  }
+  const g = buildKGramGraph(seq, order, 400);
+  rg.words = g.words;
+  rg.edges = g.edges;
+  rg.total = g.total;
+  rg.truncated = g.truncated;
+  const N = g.words.length;
+  const d = Math.max(analysis.d, 1);
+  rg.pos = g.words.map(w => {
+    const parikh = new Float64Array(d);
+    for (const c of w) { const i = analysis.alphaIdx.get(c); if (i !== undefined) parikh[i]++; }
+    return starProject(parikh, d);
+  });
+  rg.adj = Array.from({ length: N }, () => []);
+  rg.inDeg = new Array(N).fill(0);
+  rg.outDeg = new Array(N).fill(0);
+  for (const e of g.edges) { rg.adj[e.s].push(e.t); rg.outDeg[e.s]++; rg.inDeg[e.t]++; }
+  const rho = sparseSpectralRadius(N, g.edges);
+  rg.entropy = rho > 0 ? Math.log(rho) : 0;
+  rauzyGraphInfo.innerHTML = `nodes: ${N}${g.truncated ? '/' + g.total : ''} &bull; edges: ${g.edges.length} &bull; h<sub>${order}</sub> = ln &rho;(A<sub>${order}</sub>) = ${rg.entropy.toFixed(4)}`;
+  return true;
+}
+
+function drawRauzyGraph() {
+  const ctx = rauzyGraphCanvas.getContext('2d');
+  const w = rauzyGraphCanvas.width = rauzyGraphCanvas.clientWidth * DPR;
+  const h = rauzyGraphCanvas.height = rauzyGraphCanvas.clientHeight * DPR;
+  ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+  const N = rg.words.length;
+  rg.screen = [];
+  if (!N) {
+    ctx.fillStyle = '#334155'; ctx.font = `${11 * DPR}px 'Fira Code', monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText('No subwords at this order', w / 2, h / 2);
+    return;
+  }
+  let mnX = Infinity, mxX = -Infinity, mnY = Infinity, mxY = -Infinity;
+  for (const p of rg.pos) {
+    if (p.x < mnX) mnX = p.x; if (p.x > mxX) mxX = p.x;
+    if (p.y < mnY) mnY = p.y; if (p.y > mxY) mxY = p.y;
+  }
+  const rX = (mxX - mnX) || 1, rY = (mxY - mnY) || 1;
+  const sc = Math.min(w / (rX * 1.4), h / (rY * 1.4)) * rgZoom;
+  const cx = (mnX + mxX) / 2, cy = (mnY + mxY) / 2;
+  for (const p of rg.pos) rg.screen.push({
+    x: w / 2 + (p.x - cx) * sc + rgPanX,
+    y: h / 2 + (p.y - cy) * sc + rgPanY
+  });
+  const hoverNeigh = new Set();
+  if (rgHover >= 0) {
+    hoverNeigh.add(rgHover);
+    for (const t of rg.adj[rgHover]) hoverNeigh.add(t);
+    for (const e of rg.edges) if (e.t === rgHover) hoverNeigh.add(e.s);
+  }
+  ctx.lineWidth = 1 * DPR;
+  for (const e of rg.edges) {
+    const a = rg.screen[e.s], b = rg.screen[e.t];
+    const active = rgHover >= 0 && (e.s === rgHover || e.t === rgHover);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    if (active) { ctx.strokeStyle = 'rgba(251, 191, 36, 0.9)'; ctx.lineWidth = 1.8 * DPR; }
+    else { ctx.strokeStyle = `rgba(148, 163, 184, ${Math.min(0.06 + e.w * 0.03, 0.35)})`; ctx.lineWidth = 1 * DPR; }
+    ctx.stroke();
+  }
+  const maxDeg = Math.max(1, ...rg.outDeg.map((dd, i) => dd + rg.inDeg[i]));
+  for (let i = 0; i < N; i++) {
+    const p = rg.screen[i];
+    const deg = rg.outDeg[i] + rg.inDeg[i];
+    const rad = (2.4 + 5 * Math.sqrt(deg / maxDeg)) * DPR;
+    const dim = rgHover >= 0 && !hoverNeigh.has(i);
+    const hue = fnvHash(rg.words[i]) % 360;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, rad, 0, 2 * Math.PI);
+    ctx.fillStyle = dim ? 'rgba(71,85,105,0.35)' : (i === rgHover ? '#fbbf24' : `hsl(${hue}, 78%, 58%)`);
+    ctx.fill();
+    if (i === rgHover) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2 * DPR; ctx.stroke(); }
+  }
+  if (N <= 42) {
+    ctx.font = `${8 * DPR}px 'Fira Code', monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(226,232,240,0.72)';
+    for (let i = 0; i < N; i++) ctx.fillText(rg.words[i], rg.screen[i].x, rg.screen[i].y - 7 * DPR);
+  }
+  if (rgHover >= 0) {
+    const p = rg.screen[rgHover];
+    const label = `"${rg.words[rgHover]}"  out:${rg.outDeg[rgHover]}  in:${rg.inDeg[rgHover]}`;
+    ctx.font = `${9 * DPR}px 'Fira Code', monospace`;
+    const tw = ctx.measureText(label).width + 12 * DPR;
+    const bx = Math.min(Math.max(p.x - tw / 2, 4), w - tw - 4);
+    const by = Math.max(p.y - 30 * DPR, 4);
+    ctx.fillStyle = 'rgba(2,6,23,0.92)';
+    ctx.strokeStyle = 'rgba(251,191,36,0.5)';
+    ctx.lineWidth = 1 * DPR;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(bx, by, tw, 18 * DPR, 4 * DPR); else ctx.rect(bx, by, tw, 18 * DPR);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center';
+    ctx.fillText(label, bx + tw / 2, by + 12.5 * DPR);
+  }
+}
+
+rauzyGraphCanvas.addEventListener('mousedown', e => { rgDragging = true; rgLastX = e.clientX; rgLastY = e.clientY; rauzyGraphCanvas.style.cursor = 'grabbing'; });
+window.addEventListener('mousemove', e => { if (!rgDragging) return; rgPanX += e.clientX - rgLastX; rgPanY += e.clientY - rgLastY; rgLastX = e.clientX; rgLastY = e.clientY; drawRauzyGraph(); });
+window.addEventListener('mouseup', () => { rgDragging = false; rauzyGraphCanvas.style.cursor = 'grab'; });
+rauzyGraphCanvas.addEventListener('wheel', e => { e.preventDefault(); rgZoom *= e.deltaY < 0 ? 1.15 : 0.87; rgZoom = Math.max(0.15, Math.min(14, rgZoom)); drawRauzyGraph(); }, { passive: false });
+rauzyGraphCanvas.addEventListener('mousemove', e => {
+  if (rgDragging) return;
+  const rect = rauzyGraphCanvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * DPR, my = (e.clientY - rect.top) * DPR;
+  let best = -1, bestD = 14 * DPR;
+  for (let i = 0; i < rg.screen.length; i++) {
+    const d = Math.hypot(rg.screen[i].x - mx, rg.screen[i].y - my);
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  if (best !== rgHover) { rgHover = best; drawRauzyGraph(); }
+  rauzyGraphCanvas.style.cursor = best >= 0 ? 'pointer' : 'grab';
+});
+rauzyGraphCanvas.addEventListener('mouseleave', () => { if (rgHover !== -1) { rgHover = -1; drawRauzyGraph(); } });
+rauzyOrderSlider.addEventListener('input', () => {
+  rauzyOrderVal.textContent = rauzyOrderSlider.value;
+  rgPanX = 0; rgPanY = 0; rgZoom = 1; rgHover = -1;
+  rebuildRauzyGraph();
+  drawRauzyGraph();
+});
+function refreshRauzyGraph() { if (rebuildRauzyGraph()) { rgPanX = 0; rgPanY = 0; rgHover = -1; } drawRauzyGraph(); }
+
+// ════════════════════════════════════════════════════════════════
+// Panel 7: Desubstitution
+// ════════════════════════════════════════════════════════════════
+const desubRules = document.getElementById('desubRules');
+const desubOutput = document.getElementById('desubOutput');
+const desubStatus = document.getElementById('desubStatus');
+let desubState = { seq: '', blocks: [], derived: '', status: 'idle' };
+
+function logDesub(html, cls) {
+  desubOutput.innerHTML += `<div class="${cls || 'text-slate-400'}">${html}</div>`;
+  desubOutput.scrollTop = desubOutput.scrollHeight;
+}
+function suffixParse(seq, images) {
+  const n = seq.length, CAP = 3;
+  const W = new Int32Array(n + 1);
+  W[n] = 1;
+  for (let i = n - 1; i >= 0; i--) {
+    let c = 0;
+    for (const [, word] of images) {
+      const L = word.length;
+      if (i + L <= n && seq.startsWith(word, i)) { c += W[i + L]; if (c >= CAP) { c = CAP; break; } }
+    }
+    W[i] = Math.min(c, CAP);
+  }
+  return W;
+}
+function traceParse(seq, images, W) {
+  const blocks = []; let i = 0, guard = 0;
+  while (i < seq.length && guard++ < 200000) {
+    let found = null;
+    for (const [letter, word] of images) {
+      const L = word.length;
+      if (i + L <= seq.length) { if (seq.startsWith(word, i) && W[i + L] > 0) { found = { letter, len: L, partial: false }; break; } }
+      else {
+        const rem = seq.substring(i);
+        if (rem.length > 0 && rem.length < L && word.startsWith(rem)) { found = { letter, len: rem.length, partial: true }; break; }
+      }
+    }
+    if (!found) return null;
+    blocks.push({ letter: found.letter, start: i, len: found.len, partial: found.partial });
+    i += found.len;
+  }
+  return blocks;
+}
+function setDesubStatus(text, colour) {
+  const map = {
+    emerald: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10',
+    rose: 'text-rose-400 border-rose-500/40 bg-rose-500/10',
+    amber: 'text-amber-400 border-amber-500/40 bg-amber-500/10',
+    slate: 'text-slate-400 border-slate-700 bg-slate-900/90'
+  };
+  desubStatus.className = 'absolute top-2 right-2 text-[9px] font-bold code-font px-2 py-1 rounded border ' + (map[colour] || map.slate);
+  desubStatus.textContent = text;
+}
+function letterHue(ch) { return (ch.charCodeAt(0) * 47) % 360; }
+
+function runDesubstitution(silent) {
+  const rules = parseMorphism(desubRules.value);
+  const seq = analysis.seq;
+  desubState.seq = seq;
+  desubState.blocks = []; desubState.derived = '';
+  if (!silent) desubOutput.innerHTML = '';
+  if (!seq.length) { setDesubStatus('IDLE', 'slate'); drawDesubCanvas(); if (!silent) logDesub('// empty', 'text-slate-500'); return; }
+  if (rules.size === 0) { setDesubStatus('NO σ', 'slate'); drawDesubCanvas(); if (!silent) logDesub('// no σ supplied', 'text-slate-500'); return; }
+  const images = Array.from(rules.entries());
+  const W = suffixParse(seq, images);
+  const count = W[0];
+  if (count === 0) { setDesubStatus('NOT IN IMAGE', 'rose'); desubState.status = 'fail'; drawDesubCanvas(); if (!silent) logDesub('✗ sequence ∉ σ(Σ*)', 'text-rose-400'); return; }
+  const blocks = traceParse(seq, images, W);
+  if (!blocks) { setDesubStatus('TRACE FAIL', 'rose'); desubState.status = 'fail'; drawDesubCanvas(); return; }
+  desubState.blocks = blocks;
+  desubState.derived = blocks.map(b => b.letter).join('');
+  if (count === 1) {
+    setDesubStatus('UNIQUE PARSE ✓', 'emerald');
+    desubState.status = 'unique';
+    if (!silent) {
+      logDesub(`✓ unique parse → ${blocks.length} blocks`, 'text-emerald-400 font-semibold');
+      logDesub(`derived: <span class="text-cyan-300">${desubState.derived.substring(0, 90)}${desubState.derived.length > 90 ? '…' : ''}</span>`, 'text-slate-400');
+    }
+  } else {
+    setDesubStatus(`AMBIGUOUS (≥${count})`, 'amber');
+    desubState.status = 'ambiguous';
+    if (!silent) logDesub(`⚠ ≥${count} factorisations`, 'text-amber-400');
+  }
+  drawDesubCanvas();
+}
+
+function drawDesubCanvas() {
+  const ctx = desubCanvas.getContext('2d');
+  const w = desubCanvas.width = desubCanvas.clientWidth * DPR;
+  const h = desubCanvas.height = desubCanvas.clientHeight * DPR;
+  ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+  const seq = desubState.seq;
+  if (!seq) {
+    ctx.fillStyle = '#334155'; ctx.font = `${11 * DPR}px 'Fira Code', monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText('parse result renders here', w / 2, h / 2);
+    return;
+  }
+  const maxChars = Math.min(seq.length, Math.max(40, Math.floor(w / (3.4 * DPR))));
+  const cw = w / maxChars;
+  const yTop = h * 0.06, rowH = h * 0.24, yMid = h * 0.40, yBot = h * 0.76, botH = h * 0.18;
+  for (let i = 0; i < maxChars; i++) {
+    ctx.fillStyle = `hsla(${letterHue(seq[i])}, 80%, 55%, 0.85)`;
+    ctx.fillRect(i * cw, yTop, Math.max(cw - 0.6 * DPR, 0.6 * DPR), rowH);
+  }
+  if (desubState.blocks && desubState.blocks.length) {
+    for (const b of desubState.blocks) {
+      if (b.start >= maxChars) break;
+      const x0 = b.start * cw, x1 = Math.min(b.start + b.len, maxChars) * cw, bw = Math.max(x1 - x0, 1);
+      const hue = letterHue(b.letter);
+      ctx.fillStyle = `hsla(${hue}, 70%, 45%, ${b.partial ? 0.28 : 0.55})`;
+      ctx.fillRect(x0, yMid, bw - 1 * DPR, rowH);
+      ctx.strokeStyle = `hsl(${hue}, 85%, 62%)`;
+      ctx.lineWidth = 1 * DPR;
+      ctx.strokeRect(x0 + 0.5 * DPR, yMid + 0.5 * DPR, bw - 1 * DPR, rowH - 1 * DPR);
+    }
+  }
+  if (desubState.derived) {
+    const dmax = Math.min(desubState.derived.length, maxChars), dw = w / dmax;
+    for (let i = 0; i < dmax; i++) {
+      const ch = desubState.derived[i];
+      ctx.fillStyle = `hsla(${letterHue(ch)}, 80%, 55%, 0.9)`;
+      ctx.fillRect(i * dw, yBot, Math.max(dw - 0.8 * DPR, 0.8 * DPR), botH);
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Panel 8: Factor Complexity
+// ════════════════════════════════════════════════════════════════
+function drawComplexity() {
+  const ctx = complexityCanvas.getContext('2d');
+  const w = complexityCanvas.width = complexityCanvas.clientWidth * DPR;
+  const h = complexityCanvas.height = complexityCanvas.clientHeight * DPR;
+  ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+  const pn = analysis.pn;
+  if (!pn.length) {
+    ctx.fillStyle = '#334155'; ctx.font = `${11 * DPR}px 'Fira Code', monospace`;
+    ctx.textAlign = 'center'; ctx.fillText('no sequence', w / 2, h / 2); return;
+  }
+  const padL = 48 * DPR, padR = 20 * DPR, padT = 20 * DPR, padB = 32 * DPR;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const nMax = pn[pn.length - 1].n;
+  const pMax = Math.max(...pn.map(r => r.p), 10);
+  const logN = Math.log(Math.max(nMax, 2));
+  const logP = Math.log(Math.max(pMax, 2));
+  const X = n => padL + (Math.log(Math.max(n, 1)) / logN) * plotW;
+  const Y = p => padT + plotH - (Math.log(Math.max(p, 1)) / logP) * plotH;
+  ctx.strokeStyle = 'rgba(148,163,184,0.08)';
+  ctx.lineWidth = 1 * DPR;
+  for (let k = 0; k <= 5; k++) {
+    const y = padT + (k / 5) * plotH;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(148,163,184,0.7)';
+  ctx.font = `${9 * DPR}px 'Fira Code', monospace`;
+  ctx.textAlign = 'right';
+  for (let k = 0; k <= 5; k++) {
+    const val = Math.exp((1 - k / 5) * logP);
+    ctx.fillText(val >= 10 ? val.toFixed(0) : val.toFixed(1), padL - 4 * DPR, padT + (k / 5) * plotH + 3 * DPR);
+  }
+  ctx.textAlign = 'center';
+  for (let k = 1; k <= 5; k++) {
+    const nVal = Math.exp((k / 5) * logN);
+    ctx.fillText('n=' + Math.round(nVal), padL + (k / 5) * plotW, h - 8 * DPR);
+  }
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(56,189,248,0.4)';
+  ctx.setLineDash([4 * DPR, 3 * DPR]);
+  ctx.lineWidth = 1 * DPR;
+  for (let n = 1; n <= nMax; n++) {
+    const p = n + 1;
+    if (p > pMax * 1.5) break;
+    const x = X(n), y = Y(p);
+    if (n === 1) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(251,146,60,0.4)';
+  ctx.beginPath();
+  const tail = pn.filter(r => r.n >= Math.max(2, Math.floor(nMax / 2)));
+  const C = tail.length ? tail.reduce((s, r) => s + r.p / r.n, 0) / tail.length : 2;
+  for (let n = 1; n <= nMax; n++) {
+    const p = C * n;
+    if (p > pMax * 1.5) break;
+    const x = X(n), y = Y(p);
+    if (n === 1) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 2 * DPR;
+  ctx.beginPath();
+  for (let i = 0; i < pn.length; i++) {
+    const x = X(pn[i].n), y = Y(pn[i].p);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.fillStyle = '#38bdf8';
+  for (const r of pn) {
+    ctx.beginPath();
+    ctx.arc(X(r.n), Y(r.p), 2.5 * DPR, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.font = `${8 * DPR}px 'Fira Code', monospace`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillText('■ p(k)', padL + 6 * DPR, padT + 12 * DPR);
+  ctx.fillStyle = 'rgba(56,189,248,0.7)';
+  ctx.fillText('— —  k+1 (Sturmian)', padL + 6 * DPR, padT + 24 * DPR);
+  ctx.fillStyle = 'rgba(251,146,60,0.7)';
+  ctx.fillText('— —  Ck (linear)', padL + 6 * DPR, padT + 36 * DPR);
+  complexityInfo.textContent = `k_max=${nMax} &bull; p(k_max)=${pn[pn.length - 1].p}`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// Panel 9: Abelian complexity
+// ════════════════════════════════════════════════════════════════
+function drawAbelian() {
+  const ctx = abelianCanvas.getContext('2d');
+  const w = abelianCanvas.width = abelianCanvas.clientWidth * DPR;
+  const h = abelianCanvas.height = abelianCanvas.clientHeight * DPR;
+  ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+  const an = analysis.an;
+  if (!an.length) {
+    ctx.fillStyle = '#334155'; ctx.font = `${11 * DPR}px 'Fira Code', monospace`;
+    ctx.textAlign = 'center'; ctx.fillText('no sequence', w / 2, h / 2); return;
+  }
+  const padL = 48 * DPR, padR = 20 * DPR, padT = 20 * DPR, padB = 32 * DPR;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const nMax = an[an.length - 1].n;
+  const aMax = Math.max(...an.map(r => r.a), 2);
+  const X = n => padL + (n / nMax) * plotW;
+  const Y = a => padT + plotH - (a / aMax) * plotH;
+  ctx.strokeStyle = 'rgba(148,163,184,0.08)';
+  ctx.lineWidth = 1 * DPR;
+  for (let k = 0; k <= 5; k++) {
+    const y = padT + (k / 5) * plotH;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(148,163,184,0.7)';
+  ctx.font = `${9 * DPR}px 'Fira Code', monospace`;
+  ctx.textAlign = 'right';
+  for (let k = 0; k <= 5; k++) {
+    const val = Math.round(aMax * (1 - k / 5));
+    ctx.fillText(val, padL - 4 * DPR, padT + (k / 5) * plotH + 3 * DPR);
+  }
+  ctx.strokeStyle = 'rgba(56,189,248,0.4)';
+  ctx.setLineDash([4 * DPR, 3 * DPR]);
+  ctx.lineWidth = 1 * DPR;
+  ctx.beginPath();
+  ctx.moveTo(X(1), Y(2)); ctx.lineTo(X(nMax), Y(2));
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = '#a78bfa';
+  ctx.lineWidth = 2 * DPR;
+  ctx.beginPath();
+  for (let i = 0; i < an.length; i++) {
+    const x = X(an[i].n), y = Y(an[i].a);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.fillStyle = '#a78bfa';
+  for (const r of an) {
+    ctx.beginPath();
+    ctx.arc(X(r.n), Y(r.a), 2.5 * DPR, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.font = `${8 * DPR}px 'Fira Code', monospace`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#a78bfa';
+  ctx.fillText('■ a(k)', padL + 6 * DPR, padT + 12 * DPR);
+  ctx.fillStyle = 'rgba(56,189,248,0.7)';
+  ctx.fillText('— —  Sturmian a(k)=2', padL + 6 * DPR, padT + 24 * DPR);
+  abelianInfo.textContent = `k_max=${nMax} &bull; a(k_max)=${an[an.length - 1].a}`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// Panel 10: Entropy Ladder
+// ════════════════════════════════════════════════════════════════
+function drawEntropyLadder() {
+  const ctx = entropyCanvas.getContext('2d');
+  const w = entropyCanvas.width = entropyCanvas.clientWidth * DPR;
+  const h = entropyCanvas.height = entropyCanvas.clientHeight * DPR;
+  ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+  const L = analysis.ladder, E = analysis.exactEntropy;
+  if (!L.length) {
+    ctx.fillStyle = '#334155'; ctx.font = `${11 * DPR}px 'Fira Code', monospace`;
+    ctx.textAlign = 'center'; ctx.fillText('no sequence', w / 2, h / 2); return;
+  }
+  const padL = 48 * DPR, padR = 20 * DPR, padT = 20 * DPR, padB = 32 * DPR;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const kMax = L[L.length - 1].k;
+  const nMaxE = E.length ? E[E.length - 1].n : 1;
+  const yMax = Math.max(...L.map(r => r.logRho), ...E.map(r => r.val), 0.01);
+  const X = x => padL + (x / Math.max(kMax, nMaxE)) * plotW;
+  const Y = y => padT + plotH - (y / yMax) * plotH;
+  ctx.strokeStyle = 'rgba(148,163,184,0.08)';
+  ctx.lineWidth = 1 * DPR;
+  for (let k = 0; k <= 5; k++) {
+    const y = padT + (k / 5) * plotH;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(148,163,184,0.7)';
+  ctx.font = `${9 * DPR}px 'Fira Code', monospace`;
+  ctx.textAlign = 'right';
+  for (let k = 0; k <= 5; k++) {
+    const val = yMax * (1 - k / 5);
+    ctx.fillText(val.toFixed(3), padL - 4 * DPR, padT + (k / 5) * plotH + 3 * DPR);
+  }
+  ctx.textAlign = 'center';
+  for (let k = 1; k <= 6; k++) ctx.fillText('k=' + k, X(k), h - 8 * DPR);
+  ctx.strokeStyle = '#2dd4bf';
+  ctx.lineWidth = 2 * DPR;
+  ctx.beginPath();
+  for (let i = 0; i < L.length; i++) {
+    const x = X(L[i].k), y = Y(L[i].logRho);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.fillStyle = '#2dd4bf';
+  for (const r of L) {
+    ctx.beginPath();
+    ctx.arc(X(r.k), Y(r.logRho), 3 * DPR, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  if (E.length) {
+    ctx.strokeStyle = '#fb923c';
+    ctx.setLineDash([4 * DPR, 3 * DPR]);
+    ctx.lineWidth = 2 * DPR;
+    ctx.beginPath();
+    for (let i = 0; i < E.length; i++) {
+      const x = X(E[i].n), y = Y(E[i].val);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#fb923c';
+    for (const r of E) {
+      ctx.beginPath();
+      ctx.arc(X(r.n), Y(r.val), 2 * DPR, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+  ctx.font = `${8 * DPR}px 'Fira Code', monospace`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#2dd4bf';
+  ctx.fillText('■ h_k = ln ρ(A_k) — sofic upper bounds', padL + 6 * DPR, padT + 12 * DPR);
+  ctx.fillStyle = '#fb923c';
+  ctx.fillText('— — (1/n) log p(n) — finite-sample', padL + 6 * DPR, padT + 24 * DPR);
+  const lastE = E.length ? E[E.length - 1] : null;
+  const lastL = L[L.length - 1];
+  const gap = lastL && lastE ? (lastL.logRho - lastE.val) : 0;
+  entropyInfo.textContent = `(1/n)log p(n) ≈ ${lastE ? lastE.val.toFixed(4) : '—'} &bull; h_${lastL.k} = ${lastL.logRho.toFixed(4)} &bull; gap = ${gap.toFixed(4)}`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// Panel 11: Prefix-Frequency Discrepancy
+// ════════════════════════════════════════════════════════════════
+function drawBalance() {
+  const ctx = balanceCanvas.getContext('2d');
+  const w = balanceCanvas.width = balanceCanvas.clientWidth * DPR;
+  const h = balanceCanvas.height = balanceCanvas.clientHeight * DPR;
+  ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+  if (!analysis.balance || !analysis.balance.curve.length) {
+    ctx.fillStyle = '#334155'; ctx.font = `${11 * DPR}px 'Fira Code', monospace`;
+    ctx.textAlign = 'center'; ctx.fillText('no sequence', w / 2, h / 2); return;
+  }
+  const B = analysis.balance;
+  const padL = 48 * DPR, padR = 20 * DPR, padT = 20 * DPR, padB = 32 * DPR;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const nMax = B.curve[B.curve.length - 1].n;
+  const dMax = Math.max(...B.curve.map(c => c.dev), 1);
+  ctx.strokeStyle = 'rgba(148,163,184,0.4)';
+  ctx.setLineDash([4 * DPR, 3 * DPR]);
+  ctx.lineWidth = 1 * DPR;
+  ctx.beginPath();
+  const sqrtScale = dMax / Math.sqrt(nMax);
+  for (let i = 0; i < B.curve.length; i++) {
+    const x = padL + (B.curve[i].n / nMax) * plotW;
+    const y = padT + plotH - (Math.sqrt(B.curve[i].n) * sqrtScale / dMax) * plotH;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = 'rgba(148,163,184,0.08)';
+  for (let k = 0; k <= 5; k++) {
+    const y = padT + (k / 5) * plotH;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(148,163,184,0.7)';
+  ctx.font = `${9 * DPR}px 'Fira Code', monospace`;
+  ctx.textAlign = 'right';
+  for (let k = 0; k <= 5; k++) {
+    const val = dMax * (1 - k / 5);
+    ctx.fillText(val.toFixed(1), padL - 4 * DPR, padT + (k / 5) * plotH + 3 * DPR);
+  }
+  ctx.textAlign = 'center';
+  ctx.fillText('n →', padL + plotW / 2, h - 8 * DPR);
+  ctx.strokeStyle = '#fb923c';
+  ctx.lineWidth = 1.6 * DPR;
+  ctx.beginPath();
+  for (let i = 0; i < B.curve.length; i++) {
+    const x = padL + (B.curve[i].n / nMax) * plotW;
+    const y = padT + plotH - (B.curve[i].dev / dMax) * plotH;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.font = `${8 * DPR}px 'Fira Code', monospace`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#fb923c';
+  ctx.fillText('■ max_c |N_c(n) - n·π_c|', padL + 6 * DPR, padT + 12 * DPR);
+  ctx.fillStyle = 'rgba(148,163,184,0.7)';
+  ctx.fillText('— —  √n (random-walk reference)', padL + 6 * DPR, padT + 24 * DPR);
+  balanceInfo.textContent = `observed max = ${B.maxDev.toFixed(1)} &bull; finite-sample only`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// Panel 12: Surrogate Controls
+// ════════════════════════════════════════════════════════════════
+function shuffledOriginal(seq, rng) {
+  const arr = seq.split('');
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+  return arr.join('');
+}
+
+function markovSurrogate(seq, alphabet, bigrams, rng) {
+  if (!seq.length || !alphabet.length) return '';
+  const d = alphabet.length;
+  const idx = new Map(alphabet.map((c, i) => [c, i]));
+  const out = new Array(seq.length);
+  let cur = idx.get(seq[0]) ?? 0;
+  for (let i = 0; i < seq.length; i++) {
+    out[i] = alphabet[cur];
+    const row = bigrams[cur];
+    let total = 0;
+    for (let j = 0; j < d; j++) total += row[j];
+    if (total === 0) { cur = Math.floor(rng() * d); continue; }
+    let r = rng() * total;
+    for (let j = 0; j < d; j++) {
+      r -= row[j];
+      if (r <= 0) { cur = j; break; }
+    }
+  }
+  return out.join('');
+}
+
+function periodicControl(seq, period) {
+  period = Math.max(2, Math.min(period || 50, seq.length));
+  const block = seq.substring(0, period);
+  let out = '';
+  while (out.length < seq.length) out += block;
+  return out.substring(0, seq.length);
+}
+
+function drawCGRToRect(ctx, seq, x, y, w, h, alphabet, palette, title) {
+  ctx.fillStyle = '#020617';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = 'rgba(148,163,184,0.35)';
+  ctx.lineWidth = 1 * DPR;
+  ctx.strokeRect(x + 0.5 * DPR, y + 0.5 * DPR, w - 1 * DPR, h - 1 * DPR);
+  ctx.fillStyle = '#cbd5e1';
+  ctx.font = `${9 * DPR}px 'Fira Code', monospace`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(title, x + 6 * DPR, y + 5 * DPR);
+  ctx.textBaseline = 'alphabetic';
+
+  if (!seq.length || !alphabet.length) return;
+
+  const N = Math.max(alphabet.length, 3);
+  const cx = x + w / 2;
+  const cy = y + h / 2 + 6 * DPR;
+  const radius = Math.min(w, h) * 0.35;
+  const verts = {};
+  for (let i = 0; i < N; i++) {
+    const a = (i * 2 * Math.PI) / N - Math.PI / 2;
+    const vx = cx + radius * Math.cos(a);
+    const vy = cy + radius * Math.sin(a);
+    if (i < alphabet.length) verts[alphabet[i]] = { x: vx, y: vy };
+    ctx.beginPath();
+    ctx.arc(vx, vy, 2 * DPR, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(129,140,248,0.55)';
+    ctx.fill();
+  }
+  let px = cx, py = cy;
+  const stepPts = Math.max(1, Math.floor(seq.length / 4000));
+  for (let i = 0; i < seq.length; i++) {
+    const t = verts[seq[i]];
+    if (!t) continue;
+    px = (px + t.x) / 2;
+    py = (py + t.y) / 2;
+    if (i % stepPts === 0) {
+      ctx.fillStyle = getColor(i, seq.length, seq[i], palette);
+      ctx.globalAlpha = 0.7;
+      ctx.fillRect(px, py, 1.2 * DPR, 1.2 * DPR);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawSurrogates() {
+  const ctx = surrogateCanvas.getContext('2d');
+  const w = surrogateCanvas.width = surrogateCanvas.clientWidth * DPR;
+  const h = surrogateCanvas.height = surrogateCanvas.clientHeight * DPR;
+  ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+
+  const seq = sequenceInput.value.replace(/\s+/g, '').substring(0, Math.min(parseInt(renderLimitSlider.value, 10), 2000));
+  if (!seq.length) return;
+  const alphabet = analysis.alphabet;
+  if (!alphabet.length) return;
+
+  const d = alphabet.length;
+  const idx = new Map(alphabet.map((c, i) => [c, i]));
+  const bigrams = Array.from({ length: d }, () => new Float64Array(d));
+  for (let i = 0; i + 1 < seq.length; i++) {
+    const a = idx.get(seq[i]), b = idx.get(seq[i + 1]);
+    if (a !== undefined && b !== undefined) bigrams[a][b]++;
+  }
+
+  // Deterministic per-sequence seed → surrogate controls are reproducible
+  // across exports of the same word.
+  const rngShuffle = xorshift32(sequenceSeed(seq + '|freq-shuffle'));
+  const rngMarkov  = xorshift32(sequenceSeed(seq + '|markov-order-1'));
+
+  const uniform = shuffledOriginal(seq, rngShuffle);
+  const markov = markovSurrogate(seq, alphabet, bigrams, rngMarkov);
+  const period = Math.max(2, Math.min(50, Math.floor(seq.length / 40)));
+  const periodic = periodicControl(seq, period);
+
+  const palette = colorPaletteSelect.value;
+
+  const pad = 4 * DPR;
+  const halfW = (w - 3 * pad) / 2;
+  const halfH = (h - 3 * pad) / 2;
+  drawCGRToRect(ctx, seq,      pad,              pad,              halfW, halfH, alphabet, palette, 'Original');
+  drawCGRToRect(ctx, uniform,  pad * 2 + halfW,  pad,              halfW, halfH, alphabet, palette, 'Freq-shuffle');
+  drawCGRToRect(ctx, markov,   pad,              pad * 2 + halfH,  halfW, halfH, alphabet, palette, 'Markov order-1');
+  drawCGRToRect(ctx, periodic, pad * 2 + halfW,  pad * 2 + halfH,  halfW, halfH, alphabet, palette, `Periodic (T=${period})`);
+}
+
+// ════════════════════════════════════════════════════════════════
+// Master update
+// ════════════════════════════════════════════════════════════════
+function updateAll() {
+  angleVal.textContent = `${angleSlider.value}°`;
+  renderLimitVal.textContent = parseInt(renderLimitSlider.value, 10).toLocaleString();
+  turnStrengthVal.textContent = parseFloat(turnStrengthSlider.value).toFixed(1) + '×';
+  if (disclosureLCR) disclosureLCR.textContent = metaLCR.value.trim() || '(unspecified)';
+  analyzeSequence();
+  computeMetrics(analysis.seq);
+  drawTurtlePath();
+  drawCGR();
+  drawRecurrence();
+  drawMorphicCanvas();
+  drawRauzyProjection();
+  refreshRauzyGraph();
+  drawComplexity();
+  drawAbelian();
+  drawEntropyLadder();
+  drawBalance();
+  drawSurrogates();
+  if (desubRules.value.trim() && analysis.seq) runDesubstitution(true);
+  else { desubState.seq = analysis.seq; desubState.blocks = []; desubState.derived = ''; drawDesubCanvas(); }
+}
+
+// Listeners
+angleSlider.addEventListener('input', updateAll);
+renderLimitSlider.addEventListener('input', updateAll);
+interpreterMode.addEventListener('change', updateAll);
+colorPaletteSelect.addEventListener('change', updateAll);
+stepLengthInput.addEventListener('input', updateAll);
+strokeWidthInput.addEventListener('input', updateAll);
+sequenceInput.addEventListener('input', updateAll);
+metaLCR.addEventListener('input', () => {
+  if (disclosureLCR) disclosureLCR.textContent = metaLCR.value.trim() || '(unspecified)';
+});
+turnStrengthSlider.addEventListener('input', () => {
+  turnStrengthVal.textContent = parseFloat(turnStrengthSlider.value).toFixed(1) + '×';
+  drawTurtlePath();
+});
+kOverrideSlider.addEventListener('input', () => {
+  analyzeSequence();
+  computeMetrics(analysis.seq);
+  drawRauzyProjection();
+});
+document.getElementById('evalLSystemBtn').onclick = generateLSystem;
+document.getElementById('desubTestBtn').onclick = () => runDesubstitution(false);
+document.getElementById('desubAutoBtn').onclick = () => {
+  desubOutput.innerHTML = '';
+  logDesub('// auto-σ is heuristic; try entering known rules if sequence is morphic', 'text-slate-500');
+  logDesub('// (EOA sequences are generated by the β-operator, not by an explicit σ)', 'text-amber-400');
+};
+document.getElementById('desubIterBtn').onclick = () => {
+  const rules = parseMorphism(desubRules.value);
+  if (rules.size === 0) { logDesub('// supply σ first', 'text-slate-500'); return; }
+  desubOutput.innerHTML = '';
+  logDesub('// iterate desubstitution', 'text-slate-500');
+  let cur = analysis.seq;
+  const images = Array.from(rules.entries());
+  for (let level = 1; level <= 4; level++) {
+    const W = suffixParse(cur, images);
+    if (W[0] === 0) { logDesub(`  ↳ level ${level}: not in σ(Σ*)`, 'text-rose-400'); break; }
+    const blocks = traceParse(cur, images, W);
+    if (!blocks) break;
+    const derived = blocks.map(b => b.letter).join('');
+    logDesub(`w${level} = ${derived.substring(0, 60)}${derived.length > 60 ? '…' : ''} (|w${level}| = ${derived.length})`, 'text-cyan-300');
+    if (derived.length >= cur.length) break;
+    cur = derived;
+    if (cur.length <= 1) break;
+  }
+};
+desubRules.addEventListener('input', () => { if (analysis.seq && desubRules.value.trim()) runDesubstitution(true); });
+
+// Export single canvases
+function exportCanvasPNG(canvas, filename) {
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+document.getElementById('exportTurtle').onclick = () => exportCanvasPNG(turtleCanvas, 'eoa_turtle.png');
+document.getElementById('exportCGR').onclick = () => exportCanvasPNG(cgrCanvas, 'eoa_cgr.png');
+document.getElementById('exportRecurrence').onclick = () => exportCanvasPNG(recurrenceCanvas, 'eoa_recurrence.png');
+document.getElementById('exportRauzy').onclick = () => exportCanvasPNG(rauzyCanvas, 'eoa_eigenvector_projection.png');
+document.getElementById('exportRauzyGraph').onclick = () => exportCanvasPNG(rauzyGraphCanvas, 'eoa_subword_graph.png');
+document.getElementById('exportComplexity').onclick = () => exportCanvasPNG(complexityCanvas, 'eoa_factor_complexity.png');
+document.getElementById('exportAbelian').onclick = () => exportCanvasPNG(abelianCanvas, 'eoa_abelian_complexity.png');
+document.getElementById('exportEntropy').onclick = () => exportCanvasPNG(entropyCanvas, 'eoa_block_growth_ladder.png');
+document.getElementById('exportBalance').onclick = () => exportCanvasPNG(balanceCanvas, 'eoa_prefix_discrepancy.png');
+document.getElementById('exportSurrogate').onclick = () => exportCanvasPNG(surrogateCanvas, 'eoa_surrogate_controls.png');
+
+window.addEventListener('resize', updateAll);
+
+/* ══════════════════════════════════════════════════════════════
+   REPORT EXPORT
+   ══════════════════════════════════════════════════════════════ */
+async function sha256Hex(text) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+function sanitise(s) {
+    return String(s || '_').trim()
+        .replace(/[^a-zA-Z0-9._-]/g, '_')
+        .replace(/_+/g, '_')
+        .substring(0, 24) || '_';
+}
+
+async function exportProof() {
+    const btn = document.getElementById('exportProofBtn');
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Building…';
+    btn.disabled = true;
+
+    try {
+        const seq = analysis.seq;
+        const utcTimestamp = new Date().toISOString();
+        const hash = await sha256Hex(seq);
+
+        const ladderKMax = analysis.ladder.length
+            ? analysis.ladder[analysis.ladder.length - 1].k : 1;
+
+        const state = {
+            sequenceLength: seq.length,
+            alphabetSize: analysis.d,
+            alphabet: analysis.alphabet.join(' '),
+            autoK: analysis.autoK,
+            rauzyK: analysis.rauzyK,
+            ladderKMax: ladderKMax,
+            rho: analysis.rauzyLambda,
+            p4: (analysis.pn.find(r => r.n === 4) || {}).p || 0,
+            p8: (analysis.pn.find(r => r.n === 8) || {}).p || 0,
+            p12: (analysis.pn.find(r => r.n === 12) || {}).p || 0,
+            blockGrowth: analysis.exactEntropy.length
+                ? analysis.exactEntropy[analysis.exactEntropy.length - 1].val : 0,
+            soficBound: analysis.ladder.length
+                ? analysis.ladder[analysis.ladder.length - 1].logRho : 0,
+            maxDev: analysis.balance ? analysis.balance.maxDev : 0,
+            metaLetter: metaLetter.value.trim() || '(unspecified)',
+            metaLCR:    metaLCR.value.trim()    || '(unspecified)',
+            angle: angleSlider.value,
+            renderLimit: renderLimitSlider.value,
+            turnStrength: turnStrengthSlider.value,
+            interpreter: interpreterMode.value,
+            palette: colorPaletteSelect.value,
+            stepLen: stepLengthInput.value,
+            strokeW: strokeWidthInput.value,
+            morphism: desubRules.value || '(none)',
+        };
+
+        const panels = [
+            ['turtleCanvas',      'Panel 1 — Symbolic Turtle Rendering'],
+            ['cgrCanvas',         'Panel 2 — Chaos Game Representation'],
+            ['recurrenceCanvas',  'Panel 3 — Recurrence Matrix'],
+            ['morphicCanvas',     'Panel 4 — Rewrite Engine waveform'],
+            ['rauzyCanvas',       'Panel 5 — Empirical eigenvector projection'],
+            ['rauzyGraphCanvas',  'Panel 6 — Subword transition graph'],
+            ['desubCanvas',       'Panel 7 — Desubstitution test'],
+            ['complexityCanvas',  'Panel 8 — Factor complexity p(k) vs k'],
+            ['abelianCanvas',     'Panel 9 — Abelian complexity a(k) vs k'],
+            ['entropyCanvas',     'Panel 10 — Finite-sample block-growth ladder'],
+            ['balanceCanvas',     'Panel 11 — Prefix-frequency discrepancy'],
+            ['surrogateCanvas',   'Panel 12 — Surrogate controls'],
+        ];
+        const snapshots = panels.map(([id, title]) => {
+            const c = document.getElementById(id);
+            return { title, png: c ? c.toDataURL('image/png') : '' };
+        });
+        const panelHtml = snapshots.map(s => `
+            <section class="panel">
+                <h3>${escapeHtml(s.title)}</h3>
+                <img src="${s.png}" alt="${escapeHtml(s.title)}">
+            </section>
+        `).join('');
+
+        const preview = seq.length > 4000 ? seq.substring(0, 4000) : seq;
+        const seqPreviewHtml = escapeHtml(preview);
+        const seqNote = seq.length > 4000
+            ? `<p class="note">Showing first 4,000 of ${seq.length.toLocaleString()} characters.
+               Download the full sequence below to reproduce the SHA-256 exactly.</p>`
+            : '';
+        const seqDownloadLink = `<a class="dl-seq"
+            download="eoa_${sanitise(state.metaLetter)}_LCR_${sanitise(state.metaLCR)}_full_sequence.txt"
+            href="data:text/plain;charset=utf-8,${encodeURIComponent(seq)}"
+            >&#8595; download full sequence (${seq.length.toLocaleString()} chars)</a>`;
+
+        const proofHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EOA Sequence Visualizer — letter ${escapeHtml(state.metaLetter)} LCR ${escapeHtml(state.metaLCR)}</title>
+<style>
+    :root { --ink:#111827; --muted:#4b5563; --line:#d1d5db; --accent:#0369a1; --bg-soft:#f9fafb;
+            --obs:#047857; --est:#b45309; --hyp:#64748b; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           background:#fff; color:var(--ink); margin:0; padding:32px 40px 80px; line-height:1.55; font-size:14px; }
+    header.doc-head { border-bottom:2px solid var(--ink); padding-bottom:16px; margin-bottom:28px; }
+    h1 { font-size:22px; margin:0 0 6px; letter-spacing:-0.01em; }
+    h1 em { font-style:normal; color:var(--accent); font-weight:700; }
+    h2 { font-size:15px; text-transform:uppercase; letter-spacing:0.08em; color:var(--accent);
+         margin:32px 0 12px; border-bottom:1px solid var(--line); padding-bottom:6px; }
+    h3 { font-size:13px; margin:0 0 8px; letter-spacing:0.02em; }
+    h4 { font-size:12px; margin:16px 0 6px; letter-spacing:0.04em; text-transform:uppercase; }
+    h4.tier-obs { color: var(--obs); }
+    h4.tier-est { color: var(--est); }
+    h4.tier-hyp { color: var(--hyp); }
+    .subtitle { color:var(--muted); font-size:12px; }
+    .meta-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:6px 24px; font-size:12px; margin-top:12px; }
+    .meta-grid div { display:flex; justify-content:space-between; border-bottom:1px dotted var(--line); padding:3px 0; }
+    .meta-grid .k { color:var(--muted); }
+    .meta-grid .v { font-family:'Fira Code', ui-monospace, monospace; color:var(--ink); }
+    .hash { font-family:'Fira Code', ui-monospace, monospace; font-size:11px; background:var(--bg-soft);
+            border:1px solid var(--line); border-radius:4px; padding:6px 10px; word-break:break-all;
+            color:var(--ink); margin-top:4px; }
+    pre.sequence { font-family:'Fira Code', ui-monospace, monospace; font-size:11px;
+                   background:var(--bg-soft); border:1px solid var(--line); border-radius:6px;
+                   padding:12px 14px; white-space:pre-wrap; word-break:break-all;
+                   max-height:240px; overflow:auto; margin:0; }
+    .note { color:var(--muted); font-size:11px; margin:6px 0; }
+    a.dl-seq { display:inline-block; margin:6px 0 0; padding:4px 10px; background:#eff6ff; color:#0369a1;
+               border:1px solid #bfdbfe; border-radius:4px; font-size:11px; text-decoration:none; font-weight:600; }
+    a.dl-seq:hover { background:#dbeafe; }
+    .panels { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-top:12px; }
+    .panel { break-inside:avoid; page-break-inside:avoid; border:1px solid var(--line);
+             border-radius:6px; padding:10px 12px 12px; background:#fff; }
+    .panel img { display:block; width:100%; height:auto; border-radius:4px; background:#020617;
+                 border:1px solid #e5e7eb; }
+    .metric-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+    .metric-table th, .metric-table td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
+    .metric-table th { background:var(--bg-soft); font-weight:600; color:var(--muted);
+                       text-transform:uppercase; font-size:10px; letter-spacing:0.06em; }
+    .metric-table td.num { font-family:'Fira Code', ui-monospace, monospace; text-align:right; }
+    .tier-box { border:1px solid var(--line); border-radius:6px; padding:12px 14px; margin:10px 0; }
+    .tier-box.obs { border-color:rgba(4,120,87,0.35); background:rgba(4,120,87,0.04); }
+    .tier-box.est { border-color:rgba(180,83,9,0.35); background:rgba(180,83,9,0.04); }
+    .tier-box.hyp { border-color:rgba(100,116,139,0.25); background:rgba(100,116,139,0.04); }
+    .tier-note { font-size:11px; color:var(--muted); font-style:italic; margin-top:6px; }
+    .disclosure-box { border:1px solid var(--line); border-radius:6px; padding:14px 16px;
+                      background:#f9fafb; margin-top:8px; }
+    .disclosure-box h4 { font-size:12px; letter-spacing:0.04em; text-transform:uppercase;
+                         color:var(--accent); margin:12px 0 4px; }
+    .disclosure-box h4:first-child { margin-top:0; }
+    .disclosure-box p { font-size:12px; line-height:1.55; margin:4px 0 0 0; color:#334155; }
+    .disclosure-box code { font-family:'Fira Code', ui-monospace, monospace; background:#fff;
+                           padding:1px 6px; border-radius:3px; border:1px solid var(--line); font-size:11px; }
+    .disclosure-box ul { margin:6px 0 0 18px; font-size:12px; color:#334155; }
+    footer.doc-foot { margin-top:40px; padding-top:16px; border-top:1px solid var(--line);
+                      color:var(--muted); font-size:11px; }
+    footer.doc-foot ol { margin:6px 0 0 18px; padding:0; }
+    footer.doc-foot code { font-family:'Fira Code', ui-monospace, monospace; font-size:11px;
+                           background:var(--bg-soft); padding:0 4px; border-radius:3px; }
+    footer.doc-foot h4 { font-size:11px; letter-spacing:0.06em; text-transform:uppercase;
+                         color:#4b5563; margin:14px 0 4px; }
+    @media print {
+        body { padding:0; font-size:12px; }
+        .panels { gap:12px; }
+        .panel { padding:8px; }
+        .hash { font-size:10px; }
+        pre.sequence { max-height:none; }
+        h2 { page-break-after:avoid; }
+        .panel { page-break-inside:avoid; }
+    }
+</style>
+</head>
+<body>
+
+<header class="doc-head">
+    <h1>EOA Sequence Visualizer — Letter <em>${escapeHtml(state.metaLetter)}</em>, LCR ${escapeHtml(state.metaLCR)}</h1>
+    <p class="subtitle">
+    Symbolic Sequence Visualizer v4.1 &bull;
+    <a href="https://research.neurolabs.space/" style="color:var(--accent); text-decoration:none; font-weight:600;">Bahaa BuDargham</a>
+    &bull;
+    <a href="https://research.neurolabs.space/" style="color:var(--muted); text-decoration:none;">research.neurolabs.space</a>
+</p>
+</header>
+
+<h2>1. Provenance</h2>
+<div class="meta-grid">
+    <div><span class="k">Generation time (UTC)</span><span class="v">${utcTimestamp}</span></div>
+    <div><span class="k">Letter</span><span class="v">${escapeHtml(state.metaLetter)}</span></div>
+    <div><span class="k">LCR</span><span class="v">${escapeHtml(state.metaLCR)}</span></div>
+    <div><span class="k">Sequence length |w|</span><span class="v">${state.sequenceLength.toLocaleString()}</span></div>
+    <div><span class="k">Alphabet size |Σ|</span><span class="v">${state.alphabetSize}</span></div>
+    <div><span class="k">Alphabet</span><span class="v">${escapeHtml(state.alphabet)}</span></div>
+    <div><span class="k">Interpreter mode</span><span class="v">${escapeHtml(state.interpreter)}</span></div>
+    <div><span class="k">Palette</span><span class="v">${escapeHtml(state.palette)}</span></div>
+    <div><span class="k">Angle step θ</span><span class="v">${state.angle}°</span></div>
+    <div><span class="k">Turn strength</span><span class="v">${state.turnStrength}×</span></div>
+    <div><span class="k">Step length / stroke</span><span class="v">${state.stepLen} / ${state.strokeW}</span></div>
+    <div><span class="k">Render limit (visual)</span><span class="v">${state.renderLimit}</span></div>
+    <div><span class="k">Projection order (Panel 5)</span><span class="v">k = ${state.rauzyK}</span></div>
+    <div><span class="k">Ladder-saturation order</span><span class="v">k = ${state.autoK}</span></div>
+    <div><span class="k">Last ladder order</span><span class="v">k = ${state.ladderKMax}</span></div>
+</div>
+
+<p class="note" style="margin-top:10px;">
+    <strong>Note on k — three distinct orders appear in this document.</strong>
+    <br>
+    &bull; <strong>Projection order k = ${state.rauzyK}</strong> — the order used to build
+    M<sub>k</sub><sup>stride</sup> and the projection plane in Panel 5.
+    <br>
+    &bull; <strong>Ladder-saturation order k = ${state.autoK}</strong> — the smallest order at
+    which log &rho;(A<sub>k</sub>) &minus; log &rho;(A<sub>k+1</sub>) &lt; 0.005,
+    i.e. where the estimated candidate-graph entropy flattens.
+    <br>
+    &bull; <strong>Last ladder order k = ${state.ladderKMax}</strong> — the largest order
+    actually evaluated in the entropy ladder (Panel 10). The reported
+    h<sub>k</sub> = ln &rho;(A<sub>k</sub>) is taken at this order.
+    <br>
+    These three values are not expected to coincide. The metrics card reports &rho;(A<sub>k</sub>)
+    at the <em>projection</em> order; the ladder and the reported h<sub>k</sub> are evaluated at the
+    <em>largest</em> ladder order. If the projection order is smaller, that is because the
+    projection uses the tightest order, not the largest.
+</p>
+
+<p class="note" style="margin-top:10px;">
+    <strong>What is claimed, and what is not.</strong>
+    This document analyses a finite word <em>w</em> and a family of empirical graphs built from its factors.
+    A shift space <em>X</em><sub>EOA</sub> is <em>not</em> defined here.
+    The quantity h<sub>k</sub> = ln &rho;(A<sub>k</sub>) is the topological entropy of the sofic shift
+    presented by the empirical graph G<sub>k</sub> — a well-defined object built from <em>w</em>.
+    It is <em>not</em> asserted to equal the topological entropy of any underlying system, in either direction:
+    a posited X<sub>EOA</sub> could contain longer factors not observed in <em>w</em>, and could exclude
+    factors that were observed. Possible constructions of X<sub>EOA</sub> (a limit sequence, an orbit closure,
+    a substitution subshift, an S-adic system, a language shift, or an empirical finite-word system) are
+    mathematically distinct and are not chosen here.
+</p>
+
+<div style="margin-top:14px;">
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;">SHA-256 of input sequence (UTF-8, no whitespace)</div>
+    <div class="hash">${hash}</div>
+</div>
+
+<h2>2. Input and Operator Disclosure</h2>
+
+<div class="disclosure-box">
+    <p style="font-size:12px; font-style:italic; color:#334155; margin:0 0 10px 0;">
+        The terms <em>EOA</em>, <em>LCR</em>, and <em>β-operator</em> are specific to this project and are not standard in symbolic dynamics.
+    </p>
+
+    <h4>Input</h4>
+    <p>
+        The public artifact identifies the semantic input as the
+<strong>spoken English letter name</strong> &ldquo;<em>${escapeHtml(state.metaLetter)}</em>&rdquo;.
+The exact EOA phonetic encoding that is fed to the recursive operator is
+<strong>disclosed under collaboration access</strong> and is not reproduced here.
+A researcher reading this artifact can therefore reproduce everything reported below
+about the released word, but cannot independently regenerate that word from the
+semantic input without the encoding.
+    </p>
+
+    <h4>LCR (control parameter)</h4>
+    <p>
+        <strong>LCR</strong> denotes the limiting-ratio control parameter used by the EOA construction
+        to determine the recursive transformation applied to the phonetic input.
+        In this artifact, LCR is set to <code>${escapeHtml(state.metaLCR)}</code>.
+The formal mathematical definition of LCR — and its role in the transformation — is part of
+the EOA technical documentation and is available to qualified collaborators under the
+stated agreement. It is not reproduced in this public artifact.
+    </p>
+
+    <h4>β-operator</h4>
+    <p>
+        The released sequence is generated by the <strong>EOA β-operator</strong> applied to the
+        stated phonetic input and the LCR parameter above.
+        The β-operator — including its exact transformation rules and implementation details —
+        is available to qualified researchers under a signed collaboration agreement.
+        The public artifact therefore provides complete reproducibility of the released word
+        and its reported finite-word statistics, while full reproduction from the original
+        phonetic input requires access to the β-operator.
+        Researchers interested in examining or extending the construction may request access
+from the author through the collaboration portal.
+    </p>
+
+    <h4>Scope of what this document establishes</h4>
+    <p>
+        The present document <strong>analyzes a sequence generated by the EOA β-operator.</strong>
+        The hash above confirms that the displayed analyses refer to one exact sequence.
+        It does not independently prove that the sequence was produced by the claimed operator;
+        such verification requires access to the operator itself.
+    </p>
+
+    <h4>Access</h4>
+    <p>
+        Requests for the β-operator, the exact phonetic encoding, or the full EOA technical
+        documentation are handled through the following channel:
+    </p>
+    <ul>
+        <li><a href="https://research.neurolabs.space" style="color:var(--accent);">research.neurolabs.space</a></li>
+        <li>Request via the contact link on that site.</li>
+        <li>Availability is subject to a signed collaboration agreement (use, attribution, non-redistribution).</li>
+    </ul>
+</div>
+
+<h2>3. Input Sequence</h2>
+<pre class="sequence">${seqPreviewHtml}</pre>
+${seqNote}
+${seqDownloadLink}
+
+<h2>4. Statistics</h2>
+
+<div class="tier-box obs">
+    <h4 class="tier-obs">Observed finite-word statistics</h4>
+    <table class="metric-table">
+        <tr><th>Quantity</th><th>Value</th><th>Definition</th></tr>
+        <tr>
+            <td>Sequence length |w|</td>
+            <td class="num">${state.sequenceLength.toLocaleString()}</td>
+            <td>Total symbols in the released word</td>
+        </tr>
+        <tr>
+            <td>Alphabet size |Σ|</td>
+            <td class="num">${state.alphabetSize}</td>
+            <td>Distinct symbols appearing in w</td>
+        </tr>
+        <tr>
+            <td>Factor complexity p(4)</td>
+            <td class="num">${state.p4}</td>
+            <td>Distinct length-4 subwords of w</td>
+        </tr>
+        <tr>
+            <td>Factor complexity p(8)</td>
+            <td class="num">${state.p8}</td>
+            <td>Distinct length-8 subwords of w</td>
+        </tr>
+        <tr>
+            <td>Factor complexity p(12)</td>
+            <td class="num">${state.p12}</td>
+            <td>Distinct length-12 subwords of w</td>
+        </tr>
+    </table>
+    <p class="tier-note">
+        Definition: p<sub>w</sub>(k) = #{ w<sub>i</sub> w<sub>i+1</sub> &hellip; w<sub>i+k&minus;1</sub> :
+        1 &le; i &le; |w| &minus; k + 1 }, counting each distinct window once.
+        No circularization. Computed over the full released word, not a preview.
+    </p>
+</div>
+
+<div class="tier-box est">
+    <h4 class="tier-est">Model-dependent estimates</h4>
+
+    <p style="font-size:12px; color:#334155; margin:4px 0 6px;">
+        <strong>Three distinct objects are used in this document.</strong>
+        They carry different spectral radii and are reported separately.
+    </p>
+
+    <table class="metric-table">
+        <tr><th>Object</th><th>Definition</th><th>Used for</th></tr>
+        <tr>
+            <td>M<sub>k</sub><sup>stride</sup></td>
+            <td>Letter-level stride matrix:
+                M[a,b] = #&#123; i : w<sub>i</sub> = a, w<sub>i+k</sub> = b &#125;.
+                Count-weighted. No normalisation. No inverse-frequency weighting.</td>
+            <td>Empirical projection plane (Panel 5)</td>
+        </tr>
+        <tr>
+            <td>G<sub>k</sub></td>
+            <td>Order-k factor-overlap graph:
+                nodes = distinct order-k factors of w;
+                edge (a<sub>1</sub>&hellip;a<sub>k</sub>) &rarr; (a<sub>2</sub>&hellip;a<sub>k+1</sub>)
+                with observed count as edge weight.</td>
+            <td>Subword transition graph (Panel 6); candidate graph growth (Panel 10)</td>
+        </tr>
+        <tr>
+            <td>A<sub>k</sub></td>
+            <td>Binary adjacency matrix of G<sub>k</sub>:
+                A<sub>k</sub>[u][v] = 1 if the transition u &rarr; v was observed, else 0.
+                Edge weights of G<sub>k</sub> are <em>not</em> used in the spectral calculation.</td>
+            <td>Candidate graph entropy</td>
+        </tr>
+        <tr>
+            <td>&rho;(A<sub>k</sub>)</td>
+            <td>Spectral radius of A<sub>k</sub>, computed by power iteration (300 steps) on the
+                binary adjacency structure. This is the standard object for a
+                topological-entropy-like quantity; count weights would instead give a
+                Parry-measure-like quantity, which is not what is reported here.</td>
+            <td>Entropy calculation</td>
+        </tr>
+        <tr>
+            <td>h<sub>k</sub></td>
+            <td>h<sub>k</sub> = ln &rho;(A<sub>k</sub>), evaluated at the exact order k indicated.
+                This is the topological entropy of the sofic shift presented by the empirical
+                graph G<sub>k</sub>. It is a well-defined number for that object. It is not asserted
+                to equal the topological entropy of any underlying system, which is not defined
+                in this document.</td>
+            <td>Finite empirical graph statistic</td>
+        </tr>
+    </table>
+
+    <p class="tier-note" style="font-style:normal;">
+        <strong>Reported orders.</strong>
+        The metrics card shows &rho;(A<sub>k</sub>) at the <em>projection</em> order
+        k = ${state.rauzyK}. The candidate-graph entropy h<sub>k</sub> is reported at the
+        <em>last ladder</em> order k = ${state.ladderKMax}.
+        The two numbers are different objects at different orders and are not expected to satisfy
+        h<sub>k</sub> = ln &rho;(A<sub>k</sub>) across orders.
+    </p>
+
+    <table class="metric-table">
+        <tr><th>Quantity</th><th>Value</th><th>Model &amp; order</th></tr>
+        <tr>
+            <td>&rho;(A<sub>k</sub>) — projection order</td>
+            <td class="num">${state.rho.toFixed(6)}</td>
+            <td>&rho;(A<sub>k</sub>) at k = ${state.rauzyK}. Shown in the metrics card.</td>
+        </tr>
+        <tr>
+            <td>h<sub>k</sub> = ln &rho;(A<sub>k</sub>) — last ladder order</td>
+            <td class="num">${state.soficBound.toFixed(6)}</td>
+            <td>h<sub>k</sub> = ln &rho;(A<sub>k</sub>) at k = ${state.ladderKMax}.
+                Topological entropy of the sofic shift presented by G<sub>k</sub>. Not the entropy
+                of any posited underlying system.</td>
+        </tr>
+        <tr>
+            <td>&rho;(M<sub>k</sub><sup>stride</sup>) — projection order</td>
+            <td class="num">(shown in Panel 5)</td>
+            <td>Spectral radius of the stride-k letter matrix M<sub>k</sub><sup>stride</sup>
+                at k = ${state.rauzyK}. Not reported in this table because it is a different object.</td>
+        </tr>
+        <tr>
+            <td>h<sub>block</sub> — finite-sample block-growth rate</td>
+            <td class="num">${state.blockGrowth.toFixed(6)}</td>
+            <td>(1/n)·ln p(n) at n = n<sub>max</sub> = min(30, max(6, ⌊|w|/6⌋)).
+                Not an entropy estimate of the generating subshift; a finite-prefix observable.</td>
+        </tr>
+        <tr>
+            <td>Sofic–block gap</td>
+            <td class="num">${(state.soficBound - state.blockGrowth).toFixed(6)}</td>
+            <td>&rarr; 0 if the empirical graph is memory-tight at the last ladder order.</td>
+        </tr>
+        <tr>
+            <td>Max prefix discrepancy</td>
+            <td class="num">${state.maxDev.toFixed(2)}</td>
+            <td>max<sub>c</sub>|N<sub>c</sub>(n) &minus; n·π<sub>c</sub>| over observed prefixes.</td>
+        </tr>
+    </table>
+
+    <p class="tier-note">
+        These quantities are computed from the models described above. Each is a well-defined number
+        for the empirical object named. None is asserted to equal the corresponding quantity for any
+        underlying system. In particular, &rho;(A<sub>k</sub>) is <em>not</em> a Perron–Frobenius
+        eigenvalue of a substitution.
+    </p>
+</div>
+
+<div class="tier-box hyp">
+    <h4 class="tier-hyp">Unresolved structural questions</h4>
+    <p style="margin:6px 0 0 0; font-size:12px; color:#334155;">
+        The finite-word statistics are compatible with several structural regimes.
+        Which one, if any, governs the underlying system is not determined by the analyses above.
+    </p>
+</div>
+
+${state.morphism && state.morphism !== '(none)' ? `
+<div class="tier-box obs">
+    <h4 class="tier-obs">User-supplied morphism σ</h4>
+    <div style="font-family:'Fira Code', monospace; font-size:12px;">${escapeHtml(state.morphism)}</div>
+    <p class="tier-note">Used for the desubstitution test in Panel 7. Its presence enables a substitution-based reading of the word; its absence does not preclude one.</p>
+</div>` : ''}
+
+<h2>Appendix 4.A — Model definitions</h2>
+<div class="tier-box est" style="border-style:dashed;">
+    <table class="metric-table">
+        <tr><th>Quantity</th><th>Definition used in this artifact</th></tr>
+        <tr>
+            <td>M<sub>k</sub><sup>stride</sup> (letter-level stride matrix)</td>
+            <td>Count-weighted letter-level matrix at stride k.
+                Entry M[a,b] = number of positions i with w<sub>i</sub> = a and w<sub>i+k</sub> = b.
+                Built from the released word only. No normalisation. No inverse-frequency weighting.
+                <strong>This matrix is used only to build the projection plane in Panel 5.</strong></td>
+        </tr>
+        <tr>
+            <td>G<sub>k</sub> (factor-overlap graph)</td>
+            <td>Nodes = distinct order-k factors of w.
+                Edges = ordered pairs of overlapping order-k factors:
+                (w<sub>i</sub>&hellip;w<sub>i+k−1</sub>) &rarr; (w<sub>i+1</sub>&hellip;w<sub>i+k</sub>).
+                Edge weight = observed count. This graph is a
+                <em>presentation of a sofic shift containing the observed word</em>,
+                not of the generating subshift.</td>
+        </tr>
+        <tr>
+            <td>A<sub>k</sub> (binary adjacency of G<sub>k</sub>)</td>
+            <td>A<sub>k</sub>[u][v] = 1 if the transition u &rarr; v was observed in G<sub>k</sub>, else 0.
+                Edge weights from G<sub>k</sub> are ignored for the spectral calculation;
+                only the binary allowed-transition structure is used.
+                This is the standard convention for a topological-entropy-like quantity.</td>
+        </tr>
+        <tr>
+            <td>&rho;(A<sub>k</sub>)</td>
+            <td>Spectral radius of A<sub>k</sub>, computed by power iteration (300 steps) on the
+                binary adjacency structure. Reported in the estimates table (at the projection
+                order) and in the entropy ladder (Panel 10, at every order 1 &hellip; ${state.ladderKMax}).</td>
+        </tr>
+        <tr>
+            <td>&rho;(M<sub>k</sub><sup>stride</sup>)</td>
+            <td>Spectral radius of the stride-k letter matrix M<sub>k</sub><sup>stride</sup>.
+                Shown in Panel 5 only.
+                <strong>Distinct object from &rho;(A<sub>k</sub>); the two numbers are not expected to coincide.</strong></td>
+        </tr>
+        <tr>
+            <td>h<sub>k</sub> (entropy of the empirical sofic presentation)</td>
+            <td>h<sub>k</sub> = ln &rho;(A<sub>k</sub>). Reported with the exact order k used
+                (here k = ${state.ladderKMax} for the value in the statistics section).
+                This is the topological entropy of the sofic shift presented by the empirical
+                graph G<sub>k</sub>. It is a well-defined number for that object. It is not
+                asserted to equal the topological entropy of any posited underlying system,
+                which is not defined in this document.</td>
+        </tr>
+        <tr>
+            <td>Logarithm base</td>
+            <td><strong>Natural log</strong> (base <em>e</em>) throughout.
+                h<sub>k</sub> = ln &rho;(A<sub>k</sub>); h<sub>block</sub> = (1/n)·ln p(n).</td>
+        </tr>
+        <tr>
+            <td>n used for h<sub>block</sub></td>
+            <td><strong>n<sub>max</sub> = min(30, max(6, ⌊|w|/6⌋))</strong>.
+                The reported value is (1/n)·ln p(n) at the largest feasible n for this word,
+                not an extrapolated limit.</td>
+        </tr>
+        <tr>
+            <td>Max prefix discrepancy</td>
+            <td>max<sub>c</sub>|N<sub>c</sub>(n) &minus; n·π<sub>c</sub>| where N<sub>c</sub>(n) = count of
+                symbol c in the prefix w<sub>1</sub>&hellip;w<sub>n</sub>, and π<sub>c</sub> = its
+                frequency in the full released word. Computed over the first 10,000 symbols.</td>
+        </tr>
+    </table>
+</div>
+
+<h2>Appendix 4.B — Surrogate control definitions (Panel 12)</h2>
+<div class="tier-box est" style="border-style:dashed;">
+    <p class="tier-note" style="font-style:normal;">
+        Single replicate shown; visual diagnostic only. Surrogates are seeded
+        deterministically from a hash of the input word, so re-exporting the same
+        sequence reproduces the same Panel 12.
+        <br>
+        <em>freq-shuffle</em> — uniform random permutation of <em>w</em> via a seeded Fisher–Yates.
+        Preserves exact unigram counts; destroys all higher-order structure.
+        <br>
+        <em>Markov order-1</em> — empirical order-1 Markov chain with
+        P(<em>b</em>|<em>a</em>) = N(<em>ab</em>) / N(<em>a</em>), sampled with a seeded PRNG.
+        Initial symbol fixed to <em>w</em><sub>1</sub>. Length equals |<em>w</em>|.
+        <br>
+        <em>periodic</em> — first T symbols of <em>w</em> repeated, T = min(50, ⌊|<em>w</em>|/40⌋).
+        <br><br>
+        The single-replicate display above is a visual diagnostic, not a test.
+        A statistically meaningful comparison would require replicate ensembles per surrogate
+        (≳30 for a crude z-score, ≳200 for a stable empirical null) and multiple-testing control
+        across the statistics shown. That apparatus is not implemented here.
+    </p>
+</div>
+
+<h2>5. Visual Analysis Panels</h2>
+<div class="panels">
+${panelHtml}
+</div>
+
+<footer class="doc-foot">
+    <strong>Hash-check procedure.</strong>
+    <ol>
+        <li>Download the full sequence using the link in Section 3.</li>
+        <li>Compute SHA-256 over its UTF-8 bytes (whitespace stripped).</li>
+        <li>Compare to the hash in Section 1.</li>
+    </ol>
+    <p style="margin:8px 0 0 0;">
+        <strong>If the hash matches</strong>, the sequence is bit-identical to the one analyzed here.
+        All observed finite-word statistics (length, alphabet, factor counts) will then reproduce exactly.
+        The model-dependent estimates reproduce when the same model and settings are used.
+    </p>
+    <p style="margin:6px 0 0 0;">
+        <strong>Panel images</strong> are rendered in-browser and may differ at the pixel level.
+        The structure they depict is invariant; Panel 12 is seeded from the sequence and is reproducible.
+    </p>
+
+    <h4>Reproducibility</h4>
+    <p style="margin:4px 0 0 0;">
+        The released word, its SHA-256, its factor counts, and the displayed finite-word statistics are fully reproducible from the artifacts in this file alone.
+        Full reconstruction of the released word from the phonetic input requires the β-operator and the exact phonetic encoding, both available under a signed collaboration agreement.
+    </p>
+<p style="margin:14px 0 0 0;">
+    Author: <a href="https://research.neurolabs.space/" style="color:var(--accent);">Bahaa BuDargham</a>
+    &bull; <a href="https://research.neurolabs.space/" style="color:var(--muted);">https://research.neurolabs.space/</a>
+</p>
+    <p style="margin:14px 0 0 0; color:#6b7280;">
+        EOA v4.1 &bull; generation time (UTC) ${utcTimestamp}
+    </p>
+</footer>
+
+</body>
+</html>`;
+
+        const blob = new Blob([proofHtml], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const metaLetterSafe = sanitise(metaLetter.value);
+        const metaLCRSafe    = sanitise(metaLCR.value);
+        a.href = url;
+        a.download = `eoa_sequence_visualizer_letter_${metaLetterSafe}_LCR_${metaLCRSafe}_report.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Exported';
+        setTimeout(() => { btn.innerHTML = oldHtml; btn.disabled = false; }, 1800);
+    } catch (err) {
+        console.error('Export failed:', err);
+        btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Failed';
+        setTimeout(() => { btn.innerHTML = oldHtml; btn.disabled = false; }, 1800);
+    }
+}
+
+document.getElementById('exportProofBtn').addEventListener('click', exportProof);
+
+</script>
+</body>
+</html>
