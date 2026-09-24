@@ -2,8 +2,8 @@
 
 An interactive analysis tool for this sequence is available:
 
-- **Live tool:** [https://bahaa-budargham.github.io/eoa-symbolic-sequences/](https://bahaa-budargham.github.io/eoa-symbolic-sequences/)
-- **Frozen report:** [`report/eoa_sequence_visualizer_letter_a_LCR_3.14.html`](report/eoa_sequence_visualizer_letter_a_LCR_3.14.html)
+- **Live tool:** [https://bahaa-budargham.github.io/eoa-symbolic-sequences/visualizer/](https://bahaa-budargham.github.io/eoa-symbolic-sequences/visualizer/)
+- **Frozen report:** [`reports/eoa_sequence_visualizer_letter_a_LCR_3.14.html`](report/eoa_sequence_visualizer_letter_a_LCR_3.14.html)
 
 Paste the released word (or any symbolic sequence) into the tool to generate
 twelve analytical panels in real time:
