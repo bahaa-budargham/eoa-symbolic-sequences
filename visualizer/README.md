@@ -1,4 +1,4 @@
-## Interactive Visualizer
+## Interactive Visualizer V.4.1
 
 An interactive analysis tool for this sequence is available:
 
