@@ -9,45 +9,29 @@ We begin with the letter 'a' at LCR ≈ 3.14.
 ### Properties
 
 - **Letter:** a
-- **LCR:** ≈ 3.14 (the limiting growth ratio first matches π to five decimal places, 3.14159, at term 24)
+- **LCR:** ≈ 3.141593223578 (the limiting growth ratio matches π to six decimal places, 3.141593, without claiming exact equality)
 - **Alphabet:** 16 distinct letters (permuted by a fixed 1–1 substitution for staged disclosure)
-- **Factor complexity:** sublinear, zero topological entropy
-- **Released prefix:** first 2,000 letters (roughly first 7 terms)
-- **Full scale:** cumulative sequence up to term 24 contains ≈ 1,116,231,938,318 letters (over 1.1 trillion)
+- **Factor complexity:** sublinear on the released initial segment; consistent with zero topological entropy
+- **Released initial segment:** first 6,260 letters (cumulative through term 8)
+- **Full scale:** the 24th term alone contains approximately 3.86 × 10¹¹ letters
 
 ## Files
 
-- `eoa_a_LCR3.14_symbolic_sequence_2000.txt` — the 2,000-letter sequence as plain text.
-- `eoa_a_LCR3.14_symbolic_sequence_technical_note.pdf` — 3-page technical note describing the observations and open questions.
-- `checksum.txt` — SHA-256 checksum of `eoa_sequence_2000.txt` for verification.
+- `eoa_a_LCR3.14_symbolic_sequence_6260.txt` — the 6,260-letter sequence as plain text.
+- `eoa_a_LCR3.14_symbolic_sequence_technical_note.pdf` — 4-page technical note describing the observations and open questions.
+- `checksum.txt` — SHA-256 checksum of `eoa_a_LCR3.14_symbolic_sequence_6260.txt` for verification.
 
-## Full Sequence (2000 letters)
-gzhlvzggjzyihjgheqvzgzhlvzhlvbjzgyhzizygjzbjzhlvgjzehjdzzgheqvzgzhlvzggjzyihjghe
-qvzggjzyihjgheqvygpzajukbjzgzhlvyhzgjzzgizyzgyhzzhlvbjzgygpzajukbjzggjzyihjgheqv
-zhlvbjzgehjgjzbjzdzgzgzhlvgjzehjdzzgheqvzgzhlvzggjzyihjgheqvzgzhlvzhlvbjzgyhzizy
-gjzbjzhlvgjzehjdzzgheqvzgzhlvzhlvbjzgyhzizygjzbjzhlvgjzehjdzzgheqvyhzzhlvpzzgzaa
-bjuvzbygpzajukbjzgzhlvzggjzyihjgheqvyhzgjzzgzhlvbjzgzgzhlvizyzgyhzzgzhlvyhzgjzzg
-zggjzyihjgheqvygpzajukbjzgzhlvyhzzhlvpzzgzaabjuvzbygpzajukbjzgzhlvzhlvbjzgyhzizy
-gjzbjzhlvgjzehjdzzgheqvzggjzyihjgheqvygpzajukbjzgzhlvehjgjzbjzhlvbjzgygpzajukbjz
-gzdzgzhlvzgzhlvzggjzyihjgheqvzhlvbjzgehjgjzbjzdzgzgzhlvgjzehjdzzgheqvzgzhlvzggjz
-yihjgheqvzgzhlvzhlvbjzgyhzizygjzbjzhlvgjzehjdzzgheqvzgzhlvzggjzyihjgheqvzggjzyih
-jgheqvygpzajukbjzgzhlvyhzgjzzgizyzgyhzzhlvbjzgygpzajukbjzggjzyihjgheqvzhlvbjzgeh
-jgjzbjzdzgzgzhlvgjzehjdzzgheqvzgzhlvzggjzyihjgheqvzggjzyihjgheqvygpzajukbjzgzhlv
-yhzgjzzgizyzgyhzzhlvbjzgygpzajukbjzggjzyihjgheqvzhlvbjzgehjgjzbjzdzgzgzhlvgjzehj
-dzzgheqvyhzgjzzgzggjzyihjgheqvpzzgzgzhlvjzgyhzizygjzbjzhlvgjzehjdzzgheqvehjgjzbj
-zhlvbjzgygpzajukbjzggjzyihjgheqvygpzajukbjzgzhlvyhzzhlvpzzgzaabjuvzbygpzajukbjzg
-zhlvzhlvbjzgyhzizygjzbjzhlvgjzehjdzzgheqvyhzzhlvpzzgzaabjuvzbygpzajukbjzgzhlvzgg
-jzyihjgheqvyhzgjzzgzggjzyihjgheqvpzzgzgzhlvzgzaazaaygpzajukbjuvgheqvzgygpzajukyh
-zzhlvpzzgzaabjuvzbygpzajukbjzgzhlvzggjzyihjgheqvzgzhlvzgzdzgzhlvzggjzyihjgheqvzg
-zhlvzhlvbjzgyhzizygjzbjzhlvgjzehjdzzgheqvzgzhlvzggjzyihjgheqvzgzhlvzhlvbjzgyhziz
-ygjzbjzhlvgjzehjdzzgheqvzgzhlvzggjzyihjgheqvzggjzyihjgheqvygpzajukbjzgzhlvyhzgjz
-zgizyzgyhzzhlvbjzgygpzajukbjzggjzyihjgheqvzhlvbjzgehjgjzbjzdzgzgzhlvgjzehjdzzghe
-qvzgzhlvzhlvbjzgyhzizygjzbjzhlvgjzehjdzzgheqvyhzzhlvpzzgzaabjuvzbygpzajukbjzgzhl
-vzggjzyihjgheqvehjgjzbjzhlvbjzgygpzajukbjzggjzyihjgheqvygpzajukbjzgzhlvyhzzhlvpz
-zgzaabjuvzbygpzajukbjzgzhlvzgzdzgzhlvzggjzyihjgheqvzgzhlvzggjzyihjgheqvzgzhlvzhl
-vbjzgyhzizygjzbjzhlvgjzehjdzzgheqvzggjzyihjgheqvygpzajukbjzgzhlvehjgjzbjzhlvbjzg
-ygpzajukbjzgzdzgzhlvzgzhlvzggjzyihjgheqvzhlvbjzgehjgjzbjzdzgzgzhlvgjzehjdzzgheqv
+## Full Sequence (6260 letters)
 
+The full sequence is provided in `eoa_a_LCR3.14_symbolic_sequence_6260.txt`. A short excerpt is shown below for reference:
+gzhlvzggjzyihjgheqvzgzhlvzhlvbjzgyhzizygjzbjzhlvgjzehjdzzgheqvzgzhlvzggjzyihjgheqvzggjzyihjgheqvygpzajukbjzgzhlvyhzgjzzgizyzgyhzzhlvbjzgygpzajukbjzggjzyihjgheqvzhlvbjzgehjgjzbjzdzgzgzhlvgjzehjdzzgheqvzgzhlvzggjzyihjgheqvzgzhlvzhlvbjzgyhzizygjzbjzhlvgjzehjdzzgheqvzgzhlvzhlvbjzgyhzizygjzbjzhlvgjzehjdzzgheqvyhzzhlvpzzgzaabjuvzbygpzajukbjzgzhlvzggjzyihjgheqvyhzgjzzgzhlvbjzgzgzhlvizyzgyhzzgzhlvyhzgjzzgzggjzyihjgheqvygpzajukbjzgzhlvyhzzhlvpzzgzaabjuvzbygpzajukbjzgzhlvzhlvbjzgyhzizygjzbjzhlvgjzehjdzzgh
+
+
+## Observations
+
+- Factor complexity on the released initial segment grows sublinearly up to k = 537. Beyond that point the counts plateau and then decrease, which is a finite-length artifact: in a word of length 6,260 every factor of length ≥ 700 is unique.
+- The transition matrix is highly non-uniform. The most frequent letter pairs are e → a (365), y → e (286), e → i (207), i → g (207), and g → h (207). A small number of pairs dominate.
+- The recurrent factor `zgzhlv` occurs 172 times. There are 30 distinct return words to `zgzhlv` and 41 distinct return words to the single letter `z`. The most frequent return words to `z` are `g` (267), `hlv` (113), `ggj` (92), and `hlvbj` (76).
 
 ## Collaboration
 
