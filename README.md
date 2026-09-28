@@ -13,7 +13,7 @@ We begin with the letter 'a' at LCR ≈ 3.14.
 - **Alphabet:** 16 distinct letters (permuted by a fixed 1–1 substitution for staged disclosure)
 - **Factor complexity:** sublinear on the released initial segment; consistent with zero topological entropy
 - **Released initial segment:** first 6,260 letters (cumulative through term 8)
-- **Full scale:** the 24th term alone contains approximately 3.86 × 10¹¹ letters
+- **Full scale:** the 25th term alone contains 1,777,496,641,819 Trillion letters
 
 ## Files
 
