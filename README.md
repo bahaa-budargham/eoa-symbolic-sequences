@@ -42,10 +42,6 @@ We welcome collaboration from symbolic dynamicists, combinatorists on words, and
 
 Contact: Bahaa Budargham, bdarghamneurolabs@gmail.com
 
-## License
-
-This dataset is released under the Creative Commons Attribution 4.0 International License (CC BY 4.0). See `LICENSE` for details.
-
 ## DOI
 
 https://doi.org/10.5281/zenodo.22882603
